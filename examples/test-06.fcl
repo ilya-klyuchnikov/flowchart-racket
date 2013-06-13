@@ -1,0 +1,25 @@
+;; test program in -*- SCM -*- 
+;;
+;;  ... test list operations
+;;
+
+((x y)
+ (init)
+ (
+ (init (
+        (a := (cons x '()))
+	(a := (cons y a))
+	(b := (car a))
+	(c := (cdr a))
+       )
+       (if (null? a) null-list non-null-list))
+
+  (null-list
+       ()
+       (return 'null))
+
+  (non-null-list
+       ()
+       (return 'non-null))
+ ))
+

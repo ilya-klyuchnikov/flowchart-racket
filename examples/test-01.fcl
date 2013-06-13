@@ -1,0 +1,11 @@
+;; test program in -*- SCM -*- 
+
+((m n)
+ (init)
+ (
+ (init ((result := 1))
+       (goto end))
+
+  (end ()
+       (return result))
+  ))

@@ -1,0 +1,17 @@
+;; test program in -*- SCM -*- 
+;;
+;;
+
+((m n)
+ (init)
+ (
+ (init (
+        (result := (* (+ m 3) 2))
+        (n := (+ n (+ m 3)))
+	)
+       (goto end))
+
+  (end ()
+       (return result))
+  ))
+))

@@ -1,0 +1,86 @@
+((reqs)
+ (init)
+ (
+ (init ((req           := 0)
+        (ActiveReaders := 0)
+        (WriterPresent := 0)
+	(ErrorFlag     := 0))
+       (goto check-reqs))
+
+ (check-reqs ()
+           (if (null? reqs)
+               end
+               next-req))
+
+ (next-req ((req  := (car reqs))
+            (reqs := (cdr reqs)))
+           (goto attempt-start-read))
+
+ (attempt-start-read 
+           ()
+       (if (and (= req 1) (= WriterPresent 0))
+           start-read
+           attempt-stop-read))
+
+ (start-read
+           ((ActiveReaders := (+ ActiveReaders 1)))
+           (goto check-reqs))
+
+ (attempt-stop-read
+           ()
+       (if (and (= req 2) (> ActiveReaders 0))
+           stop-read
+           attempt-start-write))
+
+ (stop-read
+           ((ActiveReaders := (- ActiveReaders 1)))
+           (if (= WriterPresent 1)
+               raise-error
+               check-reqs))
+
+ (attempt-start-write
+           ()
+           (if (and (= req 3) 
+                    (and (= ActiveReaders 0)
+                         (= WriterPresent 0)))
+               start-write
+               attempt-stop-write))
+ (start-write
+             ((WriterPresent := 1))
+             (goto check-reqs))
+
+ (attempt-stop-write
+           ()
+           (if (and (= req 4) 
+                    (= WriterPresent 1))
+               stop-write
+               check-reqs))
+
+ (stop-write
+             ((WriterPresent := 0))
+             (if (> ActiveReaders 0)
+                 raise-error
+                 check-reqs))
+
+ (raise-error
+           ((ErrorFlag := 1))
+           (goto check-reqs))
+  (end ()
+       (return req))
+  ))
+
+
+states (by hand)
+ -- order of variables: reqs, req, ActiveReaders, WriterPresent, ErrorFlag
+
+[init,               (TOP, 0, 0, 0, 0)]
+[check-reqs,         (TOP, 0, 0, 0, 0)]
+   --> [end,         (TOP, 0, 0, 0, 0)]
+       [next-req,    (TOP, 0, 0, 0, 0)]
+
+[next-req,           (TOP, 0, 0, 0, 0)]
+[attempt-start-read, (TOP, TOP, 0, 0, 0)]
+  --> [start-read, (TOP, 2, 0, 0, 0)]
+      [attept-stop-read,  (TOP, TOP, 0, 0, 0)]
+[attempt-stop-read, (TOP, TOP, 0, 0, 0)]
+  --> [start-write, (TOP, 3, 0, 0, 0)]

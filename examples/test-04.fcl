@@ -1,0 +1,29 @@
+;; test program in -*- SCM -*- 
+;;
+;;  ... used to test iteration in computing uniform division
+;;
+;;     (define test-04 (get-file-object "examples/test-04.fcl"))
+;;     (pe-offline-debug-div (parse test-04) '(x))
+;;
+;;  ..result..
+;;
+;;      ((x . #(static ()))
+;;       (y . #(dynamic ()))
+;;       (a . #(dynamic ()))
+;;       (b . #(dynamic ())))
+;;
+
+((x y)
+ (init)
+ (
+ (init (
+        (a := (* (+ x b) 1))
+       )
+       (goto end))
+
+  (end (
+        (b := (+ y 5))
+       )
+       (return b))
+ ))
+

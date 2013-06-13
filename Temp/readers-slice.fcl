@@ -1,0 +1,84 @@
+;; Result of the running the revised system on the readers example.
+;; Slicing criterion is
+;;   {(start-read.1,{}), (stop-read.1,{})}
+;;
+
+((reqs)
+ (init)
+ ((init ((activereaders := 0)
+	 (writerpresent := 0))
+	;; assignments to
+	;;  req removed because it is a dead var (reassigned in next-req)
+	;;  errorflag removed because it is irrelevant 
+        (goto check-reqs))
+
+  (check-reqs
+    ()
+    (if (null? reqs)
+	end
+	next-req))
+
+  (next-req
+    ((req := (car reqs))
+     (reqs := (cdr reqs)))
+    (goto attempt-start-read))
+
+  (attempt-start-read
+    ()
+    (if (and (= req 1) (= writerpresent 0))
+      start-read
+      attempt-stop-read))
+
+  (start-read
+    ((activereaders := (+ activereaders 1)))
+    (goto check-reqs))
+
+  (attempt-stop-read
+    ()
+    (if (and (= req 2) (> activereaders 0))
+      stop-read
+      attempt-start-write))
+
+  (stop-read
+    ((activereaders := (- activereaders 1)))
+    (goto raise-error))
+    ;; conditional (if (= WriterPresent 1) raise-error check-reqs)
+    ;; removed because no relevant variable is control-dependent
+    ;; on it.  That's because block raise-error immediately goes to
+    ;; check-reqs and it only assigns to errorflag (an irrelevant var)
+
+  (attempt-start-write
+    ()
+    (if (and (= req 3)
+             (and (= activereaders 0) (= writerpresent 0)))
+      start-write
+      attempt-stop-write))
+
+  (start-write
+    ((writerpresent := 1))
+    (goto check-reqs))
+
+  (attempt-stop-write
+    ()
+    (if (and (= req 4) (= writerpresent 1))
+      stop-write
+      check-reqs))
+
+  (stop-write
+    ((writerpresent := 0))
+    (goto raise-error))
+    ;; conditional (if (> ActiveReaders 0) raise-error check-reqs))
+    ;; removed because no relevant variable is control-dependent
+    ;; on it.  That's because block raise-error immediately goes to
+    ;; check-reqs and it only assigns to errorflag (an irrelevant var)
+
+  (raise-error
+    ()           ;; assignment to error flag-removed
+    (goto check-reqs))
+    ;; this block is now trivial and could be removed in a simple
+    ;; post-processing phase
+
+  (end
+    ()
+    (return req))))
+

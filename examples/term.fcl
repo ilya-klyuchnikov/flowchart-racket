@@ -1,0 +1,41 @@
+;; term program from notes in -*- SCM -*- 
+;;  returns m x n x term
+;;
+
+((m n term)
+ (init)
+ (
+ (init    (
+           (result := term)
+           (save-n := n)
+          )
+          (goto test-m))
+
+ (test-m  ()
+          (if (< 0 m) 
+              test-n
+              done-m))
+
+ (test-n  ()
+          (if (< 0 n) 
+              loop
+              done-n))
+
+ (loop    (
+           (result := (+ result term))
+           (n := (- n 1))
+          )
+          (goto test-n))
+
+ (done-n  (
+           (m := (- m 1))
+           (n := save-n)
+          )
+          (goto test-m))
+ (done-m (
+          (result := (- result term))
+         )
+         (return result))
+  ))
+
+

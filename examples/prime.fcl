@@ -1,0 +1,45 @@
+;;   FCL program in -*- SCM -*- mode
+;;
+;;   generates the n'th prime number
+;;
+
+((a)
+ (start)
+ (
+ (start (
+	 (n := 0)
+	 (s := 2)
+	 (k := 2)
+	)
+	(goto loop))
+
+ (loop ()
+       (if (< k (+ (/ s 2) 1))
+            check
+            prime))
+
+ (check (
+         (d := (% s k))
+	 (k := (+ k 1))
+	 )
+        (if (= d 0)
+	    next
+	    loop))
+
+ (prime (
+	 (n := (+ n 1))
+	 (p := s)
+	 )
+	(if (= n a)
+	    done
+	    next))
+
+ (next (
+	(k := 2)
+	(s := (+ s 1))
+       )
+	(goto loop))
+ 
+ (done ()
+       (return p))
+  ))
