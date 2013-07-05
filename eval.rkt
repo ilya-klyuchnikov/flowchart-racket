@@ -60,7 +60,7 @@
 (define eval-fcl-file 
   (lambda (file-name args)
     (let* ((prog   (file->value file-name))
-	   (result (eval-fcl prog args)))
+           (result (eval-fcl prog args)))
       result)))
 
 
@@ -76,35 +76,35 @@
 (define eval-prog
   (lambda (prog args)
     (let* (;;
-	   ;; get program pieces
-	   ;;
-	   (params     (program-params prog))
-	   (blocks     (program-blocks prog))
-	   (init-label (program-init-label prog))
-	   ;;
-	   ;; make initial store
-	   ;;
-	   (vars           (collect-vars prog))    ;; get all prog vars
-	   (pre-init-store (initialize-table       ;; initialize all vars to
-			     vars                  ;;   default value
-			     init-store-val        
-			     empty-table))
-	   (init-store     (update-table*          ;; initialize parameter
-			     params                ;;   values
-			     args
-			     pre-init-store))
-	   ;;
-	   ;; make initial state and blockmap
-	   ;;
-	   (init-state (make-state init-label init-store))
-	   (blockmap (update-table* (map block->label blocks)
-				    blocks
-				    empty-table)))
-	   ;;
-	   ;; do transitions until halt<v> is reached
-	   ;;
+           ;; get program pieces
+           ;;
+           (params     (program-params prog))
+           (blocks     (program-blocks prog))
+           (init-label (program-init-label prog))
+           ;;
+           ;; make initial store
+           ;;
+           (vars           (collect-vars prog))    ;; get all prog vars
+           (pre-init-store (initialize-table       ;; initialize all vars to
+                            vars                  ;;   default value
+                            init-store-val        
+                            empty-table))
+           (init-store     (update-table*          ;; initialize parameter
+                            params                ;;   values
+                            args
+                            pre-init-store))
+           ;;
+           ;; make initial state and blockmap
+           ;;
+           (init-state (state init-label init-store))
+           (blockmap (update-table* (map block-label blocks)
+                                    blocks
+                                    empty-table)))
+      ;;
+      ;; do transitions until halt<v> is reached
+      ;;
       (compute-transitions init-state
-			   blockmap))))
+                           blockmap))))
 
 
 ;;---------------------------------------------------------------
@@ -117,69 +117,69 @@
 (define compute-transitions
   (lambda (init-state blockmap)
     (letrec ((transition (lambda (state)
-			   (let* ((result-state (eval-block
-						  (lookup-table
-						    (state->label state)
-						    blockmap)
-						  (state->store state)))
-				  ;;
-				  ;; debugging procedure
-				  ;;   (see bottom of file)
-				  ;;
-				  (temp (eval-debug state)))
-			     (if (halt? (state->label result-state))
-				 (halt->value (state->label result-state))
-				 (transition result-state))))))
+                           (let* ((result-state (eval-block
+                                                 (lookup-table
+                                                  (state-label state)
+                                                  blockmap)
+                                                 (state-store state)))
+                                  ;;
+                                  ;; debugging procedure
+                                  ;;   (see bottom of file)
+                                  ;;
+                                  (temp (eval-debug state)))
+                             (if (halt? (state-label result-state))
+                                 (halt-value (state-label result-state))
+                                 (transition result-state))))))
       (transition init-state))))
 
 
 ;; (block x store) -> state
 (define eval-block
   (lambda (block store)
-    (let* ((new-store (eval-assigns (block->assigns block) store))
-           (new-label (eval-jump (block->jump block) new-store)))
-      (make-state new-label new-store))))
+    (let* ((new-store (eval-assigns (block-assigns block) store))
+           (new-label (eval-jump (block-jump block) new-store)))
+      (state new-label new-store))))
 
 ;;(assigns x store) -> store
 (define eval-assigns
   (lambda (assigns store)
     (if (null? assigns)
-	store
-	(let ((new-store (eval-assign (car assigns) store)))
-	  (eval-assigns (cdr assigns) new-store)))))
+        store
+        (let ((new-store (eval-assign (car assigns) store)))
+          (eval-assigns (cdr assigns) new-store)))))
 
 ;;(assign x store) -> store
 (define eval-assign
   (lambda (assign store)
-    (let ((val (eval-exp (assign->exp assign)
-			 store))
-	  (var (assign->var assign)))
+    (let ((val (eval-exp (assign-exp assign)
+                         store))
+          (var (assign-var assign)))
       (update-table var val store))))
 
 ;;(jump x store) -> label
 (define eval-jump
   (lambda (jump store)
-    (variant-case jump
-      (goto (label) label)
-      (return (exp) (make-halt (eval-exp exp store)))
-      (if (exp then-label else-label)
-	  (if (is-true? (eval-exp exp store))
-	      then-label
-	      else-label))
-      (else (error "Unrecognized jump in eval-jump: " jump)))))
+    (match jump
+      [(goto label) label]
+      [(return exp) (halt (eval-exp exp store))]
+      [(if-jump exp then-label else-label)
+       (if (is-true? (eval-exp exp store))
+           then-label
+           else-label)]
+      [else (error "Unrecognized jump in eval-jump: " jump)])))
 
 ;;(exp x store) -> value
 (define eval-exp
   (lambda (exp store)
-    (variant-case exp
-      (const (datum) datum)
-      (varref (var) (lookup-table var store))
-      (app (op exps) (eval-op
-		       op
-		       (map (lambda (exp) (eval-exp exp store))
-			    exps)))
-                     ;; note: eval-op is in lib-fcl-shared.scm
-      (else (error "Unrecognized exp in eval-exp: " exp)))))
+    (match exp
+                  [(const datum) datum]
+                  [(varref var) (lookup-table var store)]
+                  [(app op exps) (eval-op
+                                  op
+                                  (map (lambda (exp) (eval-exp exp store))
+                                       exps))]
+                  ;; note: eval-op is in lib-fcl-shared.scm
+                  [else (error "Unrecognized exp in eval-exp: " exp)])))
 
 
 ;;------------------------------------------------------------
@@ -199,19 +199,20 @@
 (define eval-debug
   (lambda (state)
     (if (> debug-level 0)
-	(begin
-	  (display "-------------------------------")
-	  (newline)
-	  (display "LABEL: ")
-	  (pretty-print (state->label state))
-	  (newline)
-	  (display "STORE: ")
-	  (newline)
-	  (pretty-print (state->store state))
-	  (newline))
-	())))
+        (begin
+          (display "-------------------------------")
+          (newline)
+          (display "LABEL: ")
+          (pretty-print (state-label state))
+          (newline)
+          (display "STORE: ")
+          (newline)
+          (pretty-print (state-store state))
+          (newline))
+        '())))
 
-
+(eval-fcl-file "examples/power.fcl" '(5 2))
+(eval-fcl-file "outputs/power-2.fcl" '(5))
 
 
 

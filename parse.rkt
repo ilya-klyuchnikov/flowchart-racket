@@ -168,45 +168,52 @@
   (lambda (exp)
     (match exp
       [(app op exps)
-	   (set-union (map collect-vars-exp exps))]
+       (set-union*
+        (map collect-vars-exp exps))]
       [(varref var) (set var)]
       [(const datum) (set)]
       [else (error "Collect-vars: invalid exp AST: " exp)])))
 
 (define collect-vars-jump
   (lambda (exp)
-    (variant-case exp
-      (return (exp) (collect-vars-exp exp))
-      (goto (label) empty-set)
-      (if (exp then-label else-label)
-	  (collect-vars-exp exp))
-      (else (error "Collect-vars: invalid jump AST:" exp)))))
+    (match exp
+      [(return exp) (collect-vars-exp exp)]
+      [(goto label) (set)]
+      [(if-jump exp then-label else-label) (collect-vars-exp exp)]
+      [else (error "Collect-vars: invalid jump AST:" exp)])))
 
 (define collect-vars-assign
-  (lambda (assign)
-    (variant-case assign
-      (assign (var exp)
-		  (add-set var (collect-vars-exp exp)))
-      (else (error "Collect-vars: invalid assign AST:" assign)))))
+  (lambda (s)
+    (match s
+      [(assign var exp)
+       (set-union (set var) (collect-vars-exp exp))]
+      [else (error "Collect-vars: invalid assign AST:" assign)])))
 
 (define collect-vars-block
-  (lambda (block)
-    (variant-case block
-      (block (label assigns jump)
-		  (union-set (union*-set
-			       (map collect-vars-assign assigns))
-			     (collect-vars-jump jump)))
-      (else (error "Collect-vars: invalid basic block AST:" block)))))
+  (lambda (b)
+    (match b
+      [(block label assigns jump)
+       (set-union (set-union*
+                   (map collect-vars-assign assigns))
+                  (collect-vars-jump jump))]
+      [else (error "Collect-vars: invalid basic block AST:" block)])))
 
 (define collect-vars-prog
   (lambda (prog)
     (if (program? prog)
-	(union-set (program->params prog)
-		   (union*-set 
-		     (map collect-vars-block (program->blocks prog))))
-	(error "Collect-vars: invalid program AST:" prog))))
+        (set-union (list->set (program-params prog))
+                   (set-union*
+                    (map collect-vars-block (program-blocks prog))))
+        (error "Collect-vars: invalid program AST:" prog))))
 
-(define collect-vars collect-vars-prog)
+(define (set-union* sets)
+  (if (empty? sets) 
+      (set) 
+      (set-union (car sets) (set-union* (cdr sets)))))
+
+(define (collect-vars prog)
+  (set->list (collect-vars-prog prog)))
+
 
 ;; testing
 (check-not-false 
@@ -267,11 +274,11 @@
 
 (define ast-prog
   (program 
-  '(m n) 
-  'init 
-  (list 
-   (block 'init (list (assign 'result (const 1))) (goto 'test)) 
-   (block 'end '() (return (varref 'result))))))
+   '(m n) 
+   'init 
+   (list 
+    (block 'init (list (assign 'result (const 1))) (goto 'test)) 
+    (block 'end '() (return (varref 'result))))))
 
 (check-equal? (parse-program s-prog) ast-prog)
 (check-equal? (unparse-program ast-prog) s-prog)
