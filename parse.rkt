@@ -66,6 +66,14 @@
 (define (primitive? prim)
   (member prim primitives))
 
+
+;;==========================================================================
+;;  Parse
+;;
+;;   Converts list-based FCL concrete syntax to abstract syntax
+;;
+;;==========================================================================
+
 (define (parse-program prog)
   (program (car prog)
            (caadr prog)
@@ -103,8 +111,53 @@
                    (cadddr jump)))
     (else (error "Parse: invalid jump: " jump))))
 
-;; testing
-;; testing
+;;==========================================================================
+;;  Unparse
+;;
+;;   Converts abstract syntax to list-based FCL concrete syntax 
+;;
+;;==========================================================================
+
+(define (unparse-exp exp)
+  (match exp
+    [(app op exps) (cons op (map unparse-exp exps))]
+    [(varref var) var]
+    [(const datum)
+     (if (number? datum) datum (list 'quote datum))]
+    [else (error "Unparse: invalid exp AST: " exp)]))
+
+(define (unparse-jump exp)
+  (match exp
+    [(return exp) (list 'return (unparse-exp exp))]
+    [(goto label) (list 'goto label)]
+    [(if-jump exp then-label else-label)
+     (list 'if (unparse-exp exp) then-label else-label)]
+    [else (error "Unparse: invalid jump AST:" exp)]))
+
+(define (unparse-assign asg)
+  (match asg
+    [(assign var exp)
+     (list var ':= (unparse-exp exp))]
+    [else (error "Unparse: invalid assign AST:" assign)]))
+
+(define (unparse-block b)
+  (match b
+    [(block label assigns jump)
+     (list label
+           (map unparse-assign assigns)
+           (unparse-jump jump))]
+    [else (error "Unparse: invalid basic block AST:" block)]))
+
+(define unparse-program
+  (lambda (prog)
+    (match prog
+      [(program params init blocks)
+       (list params (list init) (map unparse-block blocks))]
+      [else
+       (error "Unparse: invalid program AST:" prog)])))
+
+
+
 ;; testing
 (check-not-false 
  (primitive? '*))
@@ -152,7 +205,7 @@
  (parse-block '(init ((a := 1) (b := 2)) (goto test)))
  (block 'init (list (assign 'a (const 1)) (assign 'b (const 2))) (goto 'test)))
 
-(define prog1
+(define s-prog
   '((m n)
     (init)
     {
@@ -162,7 +215,13 @@
           (return result))
      }))
 
-(check-equal?
- (parse-program prog1)
- (program '(m n) 'init (list (block 'init (list (assign 'result (const 1))) (goto 'test)) (block 'end '() (return (varref 'result))))))
+(define ast-prog
+  (program 
+  '(m n) 
+  'init 
+  (list 
+   (block 'init (list (assign 'result (const 1))) (goto 'test)) 
+   (block 'end '() (return (varref 'result))))))
 
+(check-equal? (parse-program s-prog) ast-prog)
+(check-equal? (unparse-program ast-prog) s-prog)
