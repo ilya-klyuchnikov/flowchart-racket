@@ -17,6 +17,7 @@
 ;;  --- table equality is implemented by equal?
 ;;
 ;;====================================================================
+(provide (all-defined-out))
 
 (define empty-table '())
 

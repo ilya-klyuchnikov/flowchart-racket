@@ -44,6 +44,7 @@
 ;;====================
 ;;  Abstract Syntax
 ;;====================
+(provide (all-defined-out))
 
 (require rackunit)
 
@@ -156,7 +157,56 @@
       [else
        (error "Unparse: invalid program AST:" prog)])))
 
+;;=======================
+;;  Collect Variables
+;;
+;;   Collects all variables occuring in a program
+;;
+;;=======================
 
+(define collect-vars-exp
+  (lambda (exp)
+    (match exp
+      [(app op exps)
+	   (set-union (map collect-vars-exp exps))]
+      [(varref var) (set var)]
+      [(const datum) (set)]
+      [else (error "Collect-vars: invalid exp AST: " exp)])))
+
+(define collect-vars-jump
+  (lambda (exp)
+    (variant-case exp
+      (return (exp) (collect-vars-exp exp))
+      (goto (label) empty-set)
+      (if (exp then-label else-label)
+	  (collect-vars-exp exp))
+      (else (error "Collect-vars: invalid jump AST:" exp)))))
+
+(define collect-vars-assign
+  (lambda (assign)
+    (variant-case assign
+      (assign (var exp)
+		  (add-set var (collect-vars-exp exp)))
+      (else (error "Collect-vars: invalid assign AST:" assign)))))
+
+(define collect-vars-block
+  (lambda (block)
+    (variant-case block
+      (block (label assigns jump)
+		  (union-set (union*-set
+			       (map collect-vars-assign assigns))
+			     (collect-vars-jump jump)))
+      (else (error "Collect-vars: invalid basic block AST:" block)))))
+
+(define collect-vars-prog
+  (lambda (prog)
+    (if (program? prog)
+	(union-set (program->params prog)
+		   (union*-set 
+		     (map collect-vars-block (program->blocks prog))))
+	(error "Collect-vars: invalid program AST:" prog))))
+
+(define collect-vars collect-vars-prog)
 
 ;; testing
 (check-not-false 
