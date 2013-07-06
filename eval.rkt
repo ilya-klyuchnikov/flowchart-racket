@@ -26,7 +26,7 @@
 ;;  of FCL state (label/store pair) and boolean value.
 ;;
 ;;====================================================================
-
+(provide eval-fcl)
 ;; get auxiliary files
 (require "parse.rkt")
 (require "lib-fcl-shared.rkt")
@@ -53,15 +53,11 @@
 ;;
 ;;--------------------------------------------------------------
 
-(define eval-fcl
-  (lambda (prog args)
-    (eval-prog (parse-program prog) args)))
+(define (eval-fcl prog args)
+  (eval-prog (parse-program prog) args))
 
-(define eval-fcl-file 
-  (lambda (file-name args)
-    (let* ((prog   (file->value file-name))
-           (result (eval-fcl prog args)))
-      result)))
+(define (eval-fcl-file file-name args)
+  (eval-fcl (file->value file-name) args))
 
 
 ;;--------------------------------------------------------------
@@ -172,14 +168,14 @@
 (define eval-exp
   (lambda (exp store)
     (match exp
-                  [(const datum) datum]
-                  [(varref var) (lookup-table var store)]
-                  [(app op exps) (eval-op
-                                  op
-                                  (map (lambda (exp) (eval-exp exp store))
-                                       exps))]
-                  ;; note: eval-op is in lib-fcl-shared.scm
-                  [else (error "Unrecognized exp in eval-exp: " exp)])))
+      [(const datum) datum]
+      [(varref var) (lookup-table var store)]
+      [(app op exps) (eval-op
+                      op
+                      (map (lambda (exp) (eval-exp exp store))
+                           exps))]
+      ;; note: eval-op is in lib-fcl-shared.scm
+      [else (error "Unrecognized exp in eval-exp: " exp)])))
 
 
 ;;------------------------------------------------------------
@@ -211,8 +207,8 @@
           (newline))
         '())))
 
-(eval-fcl-file "examples/power.fcl" '(5 2))
-(eval-fcl-file "outputs/power-2.fcl" '(5))
+(require rackunit)
+(check-equal? (eval-fcl-file "examples/power.fcl" '(5 2)) 25)
 
 
 

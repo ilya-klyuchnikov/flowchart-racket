@@ -42,8 +42,8 @@
 ;;
 ;;-----------------------------
 
-(struct state (label store))
-(struct halt (value))
+(struct state (label store) #:transparent)
+(struct halt (value) #:transparent)
 
 ;;
 ;;  *** warning ** : tremendous shortcut here using equal? to test
@@ -162,8 +162,8 @@
 ;;   So the field name for the tagged object is simply 'obj'
 ;;-----------------------------
 
-(struct static (obj))
-(struct dynamic (obj))
+(struct static (obj) #:transparent)
+(struct dynamic (obj) #:transparent)
 
 (define pe-val->object
   (lambda (pe-val)
