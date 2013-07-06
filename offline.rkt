@@ -594,8 +594,8 @@
                                       exps)
                               store)]
       [(d-app op exps) (app op (map (lambda (exp)
-                                           (offline-exp exp store))
-                                         exps))]
+                                      (offline-exp exp store))
+                                    exps))]
       ;; lift only works for numbers now
       [(lift exp) (const (offline-exp exp store))]
       [else (error "Unrecognized exp in offline-exp: " exp)])))
