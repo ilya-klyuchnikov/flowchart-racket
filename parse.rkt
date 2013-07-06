@@ -65,7 +65,6 @@
 (define (primitive? prim)
   (member prim primitives))
 
-
 #|
 ============================================================================
   Parse
@@ -101,12 +100,12 @@
     [(list 'if exp l1 l2) (if-jump (parse-exp exp) l1 l2)]
     [_ (error "Parse: invalid jump: " jump)]))
 
-;;==========================================================================
-;;  Unparse
-;;
-;;   Converts abstract syntax to list-based FCL concrete syntax 
-;;
-;;==========================================================================
+#|
+==========================================================================
+  Unparse
+  Converts abstract syntax to list-based FCL concrete syntax 
+==========================================================================
+|#
 
 (define (unparse-exp exp)
   (match exp
@@ -137,59 +136,43 @@
     [(program vs i bs) (list vs (list i) (map unparse-block bs))]
     [_ (error "Unparse: invalid program AST:" prog)]))
 
-;;=======================
-;;  Collect Variables
-;;
-;;   Collects all variables occuring in a program
-;;
-;;=======================
+#|
+==========================================================================
+  Collect Variables
+  Collects all variables occuring in a program
+==========================================================================
+|#
 
-(define collect-vars-exp
-  (lambda (exp)
-    (match exp
-      [(app op exps)
-       (set-union*
-        (map collect-vars-exp exps))]
-      [(varref var) (set var)]
-      [(const datum) (set)]
-      [else (error "Collect-vars: invalid exp AST: " exp)])))
+(define (collect-vars-exp exp)
+  (match exp
+    [(app op exps) (apply set-union (map collect-vars-exp exps))]
+    [(varref var) (set var)]
+    [(const datum) (set)]
+    [_ (error "Collect-vars: invalid exp AST: " exp)]))
 
-(define collect-vars-jump
-  (lambda (exp)
-    (match exp
-      [(return exp) (collect-vars-exp exp)]
-      [(goto label) (set)]
-      [(if-jump exp then-label else-label) (collect-vars-exp exp)]
-      [else (error "Collect-vars: invalid jump AST:" exp)])))
+(define (collect-vars-jump exp)
+  (match exp
+    [(return exp) (collect-vars-exp exp)]
+    [(goto _) (set)]
+    [(if-jump exp _ _) (collect-vars-exp exp)]
+    [_ (error "Collect-vars: invalid jump AST:" exp)]))
 
-(define collect-vars-assign
-  (lambda (s)
-    (match s
-      [(assign var exp)
-       (set-union (set var) (collect-vars-exp exp))]
-      [else (error "Collect-vars: invalid assign AST:" assign)])))
+(define (collect-vars-assign s)
+  (match s
+    [(assign v e) (set-union (set v) (collect-vars-exp e))]
+    [_ (error "Collect-vars: invalid assign AST:" assign)]))
 
-(define collect-vars-block
-  (lambda (b)
-    (match b
-      [(block label assigns jump)
-       (set-union (set-union*
-                   (map collect-vars-assign assigns))
-                  (collect-vars-jump jump))]
-      [else (error "Collect-vars: invalid basic block AST:" block)])))
+(define (collect-vars-block b)
+  (match b
+    [(block _ assigns jump)
+     (apply set-union (cons (collect-vars-jump jump) (map collect-vars-assign assigns)))]
+    [_ (error "Collect-vars: invalid basic block AST:" block)]))
 
-(define collect-vars-prog
-  (lambda (prog)
-    (if (program? prog)
-        (set-union (list->set (program-params prog))
-                   (set-union*
-                    (map collect-vars-block (program-blocks prog))))
-        (error "Collect-vars: invalid program AST:" prog))))
-
-(define (set-union* sets)
-  (if (empty? sets) 
-      (set) 
-      (set-union (car sets) (set-union* (cdr sets)))))
+(define (collect-vars-prog prog)
+  (match prog
+    [(program params _ bs) 
+     (apply set-union (cons (set params) (map collect-vars-block bs)))]
+    [_ (error "Collect-vars: invalid program AST:" prog)]))
 
 (define (collect-vars prog)
   (set->list (collect-vars-prog prog)))
