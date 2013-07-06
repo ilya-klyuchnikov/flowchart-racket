@@ -10,6 +10,8 @@
 ;;
 ;;====================================================================
 
+(provide (all-defined-out))
+
 (require "parse.rkt")             ;; parsing procedures
 (require "lib-fcl-shared.rkt")    ;; misc helper procedures
 (require "lib-table.rkt")         ;; table procedures (for store, blockmap)
@@ -381,12 +383,4 @@
                     '()))
               '()))
         '())))
-
-; TODO this produces stupid wrong results
-(define power (get-file-object "examples/power.fcl"))
-(online power '(n) '(1))
-(online power '(n) '(3))
-
-(eval-fcl (unparse-program (online-prog (parse-program power) '(n) '(1))) '(5))
-(eval-fcl (unparse-program (online-prog (parse-program power) '(n) '(2))) '(5))
 

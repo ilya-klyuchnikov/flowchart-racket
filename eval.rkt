@@ -26,8 +26,8 @@
 ;;  of FCL state (label/store pair) and boolean value.
 ;;
 ;;====================================================================
-(provide eval-fcl)
-;; get auxiliary files
+(provide eval-fcl eval-fcl-file)
+
 (require "parse.rkt")
 (require "lib-fcl-shared.rkt")
 (require "lib-table.rkt")
@@ -206,10 +206,3 @@
           (pretty-print (state-store state))
           (newline))
         '())))
-
-(require rackunit)
-(check-equal? (eval-fcl-file "examples/power.fcl" '(5 2)) 25)
-
-
-
-

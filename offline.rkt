@@ -13,6 +13,7 @@
 ;;
 ;;====================================================================
 
+(provide offline-prog)
 (require "parse.rkt")
 (require (except-in "lib-fcl-shared.rkt" eval-op))    ;; misc helper procedures
 (require "lib-table.rkt")         ;; table procedures (for store, blockmap)
@@ -731,8 +732,5 @@
            (ann-prog        (ann-prog prog div)))
       (pretty-print ann-prog))))
 
-(define power (get-file-object "examples/power.fcl"))
-(offline power '(n) '(2))
-
-(require "eval.rkt")
-(eval-fcl (unparse-program (offline-prog (parse-program power) '(n) '(2))) '(5))
+;(define power (get-file-object "examples/power.fcl"))
+;(offline power '(n) '(2))
