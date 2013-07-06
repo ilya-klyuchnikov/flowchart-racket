@@ -84,18 +84,15 @@
 (define (parse-assign s)
   (match s 
     [(list id ':= exp) (assign id (parse-exp exp))]))
-; it is possible to use match with app, but then we need to rename app->call (it is idiomatic name!)
+
 (define (parse-exp exp)
   (match exp
     [(cons 'quote e) e]
-    [(cons op args) 
-     (if (primitive? op) 
-         (app op (map parse-exp args)) 
-         (error "Parse: invalid expression:" exp))]
-    [e (cond
-         [(number? e) (const e)]
-         [(primitive? e) (app e '())]
-         [else (varref e)])]))
+    [(cons (and op (? primitive?)) args) (app op (map parse-exp args))]
+    [(? number?) (const exp)]
+    [(? primitive?) (app exp '())]
+    [(? symbol?) (varref exp)]
+    [_ (error "Parse: invalid exp: " exp)]))
 
 (define (parse-jump jump)
   (match jump
@@ -115,39 +112,30 @@
   (match exp
     [(app op exps) (cons op (map unparse-exp exps))]
     [(varref var) var]
-    [(const datum)
-     (if (number? datum) datum (list 'quote datum))]
-    [else (error "Unparse: invalid exp AST: " exp)]))
+    [(const datum) (quasiquote (unquote datum))]
+    [_ (error "Unparse: invalid exp AST: " exp)]))
 
 (define (unparse-jump exp)
   (match exp
-    [(return exp) (list 'return (unparse-exp exp))]
+    [(return e) (list 'return (unparse-exp e))]
     [(goto label) (list 'goto label)]
-    [(if-jump exp then-label else-label)
-     (list 'if (unparse-exp exp) then-label else-label)]
-    [else (error "Unparse: invalid jump AST:" exp)]))
+    [(if-jump e l1 l2) (list 'if (unparse-exp e) l1 l2)]
+    [_ (error "Unparse: invalid jump AST: " exp)]))
 
 (define (unparse-assign asg)
   (match asg
-    [(assign var exp)
-     (list var ':= (unparse-exp exp))]
-    [else (error "Unparse: invalid assign AST:" assign)]))
+    [(assign v e) (list v ':= (unparse-exp e))]
+    [_ (error "Unparse: invalid assign AST:" assign)]))
 
 (define (unparse-block b)
   (match b
-    [(block label assigns jump)
-     (list label
-           (map unparse-assign assigns)
-           (unparse-jump jump))]
-    [else (error "Unparse: invalid basic block AST:" block)]))
+    [(block lbl as j) (list lbl (map unparse-assign as) (unparse-jump j))]
+    [_ (error "Unparse: invalid basic block AST:" block)]))
 
-(define unparse-program
-  (lambda (prog)
-    (match prog
-      [(program params init blocks)
-       (list params (list init) (map unparse-block blocks))]
-      [else
-       (error "Unparse: invalid program AST:" prog)])))
+(define (unparse-program prog)
+  (match prog
+    [(program vs i bs) (list vs (list i) (map unparse-block bs))]
+    [_ (error "Unparse: invalid program AST:" prog)]))
 
 ;;=======================
 ;;  Collect Variables
