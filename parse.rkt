@@ -66,49 +66,43 @@
   (member prim primitives))
 
 
-;;==========================================================================
-;;  Parse
-;;
-;;   Converts list-based FCL concrete syntax to abstract syntax
-;;
-;;==========================================================================
+#|
+============================================================================
+  Parse
+  Converts list-based FCL concrete syntax to abstract syntax
+============================================================================
+|#
 
-(define (parse-program prog)
-  (program (car prog)
-           (caadr prog)
-           (map parse-block (caddr prog))))
-
+(define (parse-program s)
+  (match s 
+    [(list args (list label) blocks) (program args label (map parse-block blocks))]))
 
 (define (parse-block s)
-  (block (car s)
-         (map parse-assign (cadr s))
-         (parse-jump (caddr s))))
+  (match s 
+    [(list lbl assigns jump) (block lbl (map parse-assign assigns) (parse-jump jump))]))
 
 (define (parse-assign s)
-  (assign (car s)
-          (parse-exp (caddr s))))
-
+  (match s 
+    [(list id ':= exp) (assign id (parse-exp exp))]))
+; it is possible to use match with app, but then we need to rename app->call (it is idiomatic name!)
 (define (parse-exp exp)
-  (if (pair? exp)
-      (if (equal? 'quote (car exp))
-          (const (cadr exp))
-          (if (primitive? (car exp))
-              (app (car exp) (map parse-exp (cdr exp)))
-              (error "Parse: invalid expression:" exp)))
-      (if (number? exp)
-          (const exp)
-          (if (primitive? exp)
-              (app exp '())
-              (varref exp)))))
+  (match exp
+    [(cons 'quote e) e]
+    [(cons op args) 
+     (if (primitive? op) 
+         (app op (map parse-exp args)) 
+         (error "Parse: invalid expression:" exp))]
+    [e (cond
+         [(number? e) (const e)]
+         [(primitive? e) (app e '())]
+         [else (varref e)])]))
 
 (define (parse-jump jump)
-  (case (car jump)
-    ((goto) (goto (cadr jump)))
-    ((return) (return (parse-exp (cadr jump))))
-    ((if) (if-jump (parse-exp (cadr jump))
-                   (caddr jump)
-                   (cadddr jump)))
-    (else (error "Parse: invalid jump: " jump))))
+  (match jump
+    [(list 'goto label) (goto label)]
+    [(list 'return exp) (return (parse-exp exp))]
+    [(list 'if exp l1 l2) (if-jump (parse-exp exp) l1 l2)]
+    [_ (error "Parse: invalid jump: " jump)]))
 
 ;;==========================================================================
 ;;  Unparse
