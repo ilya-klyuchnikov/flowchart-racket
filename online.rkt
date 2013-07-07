@@ -175,7 +175,7 @@
                             ;;   ...non-halt states in pending list
                             ;;   ...previous stated added to seen
                             ;;   ...previous residual block added on
-                            (transition (add-pending* (filter
+                            (transition (add-pending* (filter-not
                                                        halt-state?
                                                        new-states)
                                                       new-pending)

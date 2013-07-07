@@ -45,13 +45,6 @@
 (struct state (label store) #:transparent)
 (struct halt (value) #:transparent)
 
-;;
-;;  *** warning ** : tremendous shortcut here using equal? to test
-;;                   for equality of states.  Changes in representation
-;;                   of states, stores, or tables may make this invalid.
-;;
-(define equal-state? equal?)
-
 (define halt-state?
   (lambda (state)
     (halt? (state-label state))))
@@ -66,40 +59,40 @@
 ;;(op x args) -> value 
 (define eval-op
   (lambda (op vals)
-      (case op
-        ((+) (+ (car vals)
-	      (cadr vals)))
-	((-) (- (car vals)
-		(cadr vals)))
-	((*) (* (car vals)
-		(cadr vals)))
-	((/) (quotient (car vals)
-		       (cadr vals)))
-	((%) (modulo    (car vals)
-		        (cadr vals)))
-	((=) (make-FCL-boolean (equal? (car vals)
-				       (cadr vals))))
-	((<) (make-FCL-boolean (< (car vals) (cadr vals))))
-	((>) (make-FCL-boolean (> (car vals) (cadr vals))))
-	;;
-	;; list stuff
-	;;
-	((car) (car (car vals)))
-	((cdr) (cdr (car vals)))
-	((cons) (cons (car vals)
-		      (cadr vals)))
-	((null) '())
-	((list) vals)
-	((null?) (make-FCL-boolean (null? (car vals))))
-	((pair?) (make-FCL-boolean (pair? (car vals))))
-	((list?) (make-FCL-boolean (pair? (car vals))))
-	;;
-	;; misc
-	;;
-	((test) (if (is-true? (car vals))
-		    (cadr vals)
-		    (caddr vals)))
-	(else (error "Undefined operation:" op)))))
+    (case op
+      ((+) (+ (car vals)
+              (cadr vals)))
+      ((-) (- (car vals)
+              (cadr vals)))
+      ((*) (* (car vals)
+              (cadr vals)))
+      ((/) (quotient (car vals)
+                     (cadr vals)))
+      ((%) (modulo    (car vals)
+                      (cadr vals)))
+      ((=) (make-FCL-boolean (equal? (car vals)
+                                     (cadr vals))))
+      ((<) (make-FCL-boolean (< (car vals) (cadr vals))))
+      ((>) (make-FCL-boolean (> (car vals) (cadr vals))))
+      ;;
+      ;; list stuff
+      ;;
+      ((car) (car (car vals)))
+      ((cdr) (cdr (car vals)))
+      ((cons) (cons (car vals)
+                    (cadr vals)))
+      ((null) '())
+      ((list) vals)
+      ((null?) (make-FCL-boolean (null? (car vals))))
+      ((pair?) (make-FCL-boolean (pair? (car vals))))
+      ((list?) (make-FCL-boolean (pair? (car vals))))
+      ;;
+      ;; misc
+      ;;
+      ((test) (if (is-true? (car vals))
+                  (cadr vals)
+                  (caddr vals)))
+      (else (error "Undefined operation:" op)))))
 
 ;;
 ;; FCL booleans:
@@ -112,8 +105,8 @@
 (define make-FCL-boolean
   (lambda (boolean)
     (if boolean
-	1
-	0)))
+        1
+        0)))
 
 ;; value -> #t | #f
 (define is-true?
@@ -134,24 +127,22 @@
 (define foldr
   (lambda (b f)
     (letrec ((loop (lambda (l)
-		     (if (null? l)
-			 b
-			 (f (car l)
-			    (loop (cdr l)))))))
+                     (if (null? l)
+                         b
+                         (f (car l)
+                            (loop (cdr l)))))))
       loop)))
 
 (define foldl
   (lambda (b f)
     (letrec ((loop (lambda (l acc)
-		     (if (null? l)
-			 acc
-			 (loop (cdr l)
-			       (f (car l) acc))))))
+                     (if (null? l)
+                         acc
+                         (loop (cdr l)
+                               (f (car l) acc))))))
       (lambda (l) (loop l b)))))
 
-(define filter
-  (lambda (p l)
-    ((foldr '() (lambda (a l) (if (p a) l (cons a l)))) l)))
+
 
 
 ;;-----------------------------
@@ -184,17 +175,17 @@
 (define get-file-object
   (lambda (in-file-name)
     (let* ((in     (open-input-file in-file-name))
-	   (obj    (read in)))
+           (obj    (read in)))
       (begin
-	(close-input-port in)
-	obj))))
+        (close-input-port in)
+        obj))))
 
 (define put-file-object
   (lambda (out-file-name obj)
     (let ((out    (open-output-file out-file-name)))
       (begin
-	(pretty-print obj out)
-	(close-output-port out)))))
+        (pretty-print obj out)
+        (close-output-port out)))))
 
 ;;-----------------------------
 ;;
@@ -227,27 +218,27 @@
 
 (define state-to-label!
   (let ((state-table       '())
-	(next-label-number 0))
+        (next-label-number 0))
     (lambda (command . args)
       (case command
-	((convert) (let* ((state (car args))
-			  (label (state-label state))
-			  (in-list (assoc state state-table)))
-		     (if in-list
-			 (cdr in-list)
-			 (let ((new-label (string->symbol
-					    (string-append
-					      (symbol->string label)
-					      "-"
-					      (number->string
-						next-label-number)))))
-			   (begin
-			     (set! next-label-number (+ next-label-number 1))
-			     (set! state-table (cons (cons state new-label)
-						     state-table))
-			     new-label)))))
-	((print) (pretty-print (reverse state-table)))
-	((reset) (begin
-		   (set! state-table '())
-		   (set! next-label-number 0)))
-	(else (error "Bad command to state-to-label-numbers: " command))))))  
+        ((convert) (let* ((state (car args))
+                          (label (state-label state))
+                          (in-list (assoc state state-table)))
+                     (if in-list
+                         (cdr in-list)
+                         (let ((new-label (string->symbol
+                                           (string-append
+                                            (symbol->string label)
+                                            "-"
+                                            (number->string
+                                             next-label-number)))))
+                           (begin
+                             (set! next-label-number (+ next-label-number 1))
+                             (set! state-table (cons (cons state new-label)
+                                                     state-table))
+                             new-label)))))
+        ((print) (pretty-print (reverse state-table)))
+        ((reset) (begin
+                   (set! state-table '())
+                   (set! next-label-number 0)))
+        (else (error "Bad command to state-to-label-numbers: " command))))))  

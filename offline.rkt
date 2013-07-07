@@ -480,7 +480,7 @@
                                    (state-store state)))
                                  (new-states (car new-states/res-block))
                                  (res-block  (cdr new-states/res-block)))
-                            (transition (add-pending* (filter
+                            (transition (add-pending* (filter-not
                                                        halt-state?
                                                        new-states)
                                                       new-pending)
