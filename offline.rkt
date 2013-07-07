@@ -146,7 +146,7 @@
     (let ((blocks (program-blocks prog)))
       (letrec ((loop (lambda (div)
                        (let ((new-div (div-blocks blocks div)))
-                         (if (equal-tables? new-div div)
+                         (if (equal? new-div div)
                              new-div              ;; no change, so return
                              (loop new-div))))))  ;; change, so continue
         (loop div)))))
@@ -177,12 +177,13 @@
 (define div-assign
   (lambda (assign div)
     (let* ((var         (assign-var assign))
-           (var-bt-type (lookup-table var div))
+           (var-bt-type (hash-ref div var))
            (exp-bt-type (div-exp (assign-exp assign)
                                  div)))
-      (update-table var
+      (hash-set div
+                    var
                     (bt-type-lub var-bt-type exp-bt-type)
-                    div))))
+                    ))))
 
 ;(bt-type x bt-type) -> bt-type
 ;;  computes least upper bound on bt-types (order S < D)
@@ -208,7 +209,7 @@
   (lambda (exp div)
     (match exp
       [(const datum) (static '())]
-      [(varref var) (lookup-table var div)]
+      [(varref var) (hash-ref div var)]
       [(app op exps) (div-op op exps div)]
       [else (error "Unrecognized exp in div-exp: " exp)])))
 
@@ -272,7 +273,7 @@
   (lambda (asg div)
     (let* ((var          (assign-var asg))
            (exp          (assign-exp asg))
-           (tag          (lookup-table var div))
+           (tag          (hash-ref div var))
            (tagged-exp-2 (ann-exp exp div)))
       (match tag
         [(static  '()) (assign   var (ann-object-untag tagged-exp-2))]
@@ -299,7 +300,7 @@
   (lambda (exp div)
     (match exp
       [(const datum) (static (const datum))]
-      [(varref var) (let ((tag (lookup-table var div)))
+      [(varref var) (let ((tag (hash-ref div var)))
                       (match tag
                         [(static  '()) (static  (varref var))]
                         [(dynamic '()) (dynamic (d-varref var))]
@@ -361,11 +362,11 @@
            ;;
            ;; set up to make initial store
            ;;
-           (dynamic-vars    (domain-table (restrict-table dynamic? div)))
+           (dynamic-vars    (hash-keys (restrict-table dynamic? div)))
            (static-vars     (diff-set vars dynamic-vars))
            (param-store     (update-table* static-params
                                            static-vals
-                                           empty-table))
+                                           (hash)))
            (lifted-params   (inter-set static-params dynamic-vars))
            ;;
            ;; make initial store, state, blockmap, pending, seen structures
@@ -378,7 +379,7 @@
            (res-init-label  (state-to-label! 'convert init-state))
            (blockmap (update-table* (map block-label blocks-2)
                                     blocks-2
-                                    empty-table))
+                                    (hash)))
            (pending         (add-pending init-state empty-pending))
            (seen            empty-set)
            ;;
@@ -414,9 +415,9 @@
                 (if (null? vars)
                     '()
                     (cons (assign (car vars)
-                                  (const (lookup-table
-                                          (car vars)
-                                          param-store)))
+                                  (const (hash-ref
+                                          param-store
+                                          (car vars))))
                           (make-assigns (cdr vars)))))))
       (block
        sys-lift-block-label
@@ -428,7 +429,7 @@
 ;; notice how this parallels make initial store in online case
 (define make-init-div
   (lambda (vars static-params dynamic-params)
-    (let* ((div-w/sta     (initialize-table vars (static '()) empty-table))
+    (let* ((div-w/sta     (initialize-table vars (static '())))
            (div-w/sta/dyn (update-table* dynamic-params
                                          (map (lambda (var)
                                                 (dynamic '()))
@@ -441,7 +442,7 @@
   (lambda (vars div)
     ((foldr '()
             (lambda (var dyn-vars)
-              (if (dynamic? (lookup-table var div))
+              (if (dynamic? (hash-ref div var))
                   (cons var dyn-vars)
                   dyn-vars)))
      vars)))
@@ -451,12 +452,12 @@
     (update-table* static-vars 
                    (map (lambda (var)
                           (if (memq var static-params)
-                              (lookup-table
-                               var
-                               param-store)
+                              (hash-ref
+                               param-store
+                               var)
                               init-store-val))
                         static-vars)
-                   empty-table)))
+                   (hash))))
 
 ;; -- note identical to online
 ;;(state x blockmap) -> value
@@ -475,8 +476,7 @@
                       (if (not (in-set? state seen))
                           (let* ((new-states/res-block
                                   (offline-block
-                                   (lookup-table (state-label state)
-                                                 blockmap)
+                                   (hash-ref blockmap (state-label state))
                                    (state-store state)))
                                  (new-states (car new-states/res-block))
                                  (res-block  (cdr new-states/res-block)))
@@ -533,7 +533,7 @@
   (lambda (assign-2 store)
     (match assign-2
       [(assign var exp)
-       (cons (update-table var (offline-exp exp store) store)
+       (cons (hash-set store var (offline-exp exp store))
              '())]
       [(d-assign var exp)
        (cons store
@@ -588,7 +588,7 @@
     (match exp-2
       [(const datum) datum]
       [(d-const datum) (const datum)]
-      [(varref var)  (lookup-table var store)]
+      [(varref var)  (hash-ref store var)]
       [(d-varref var) (varref var)]
       [(app op exps) (eval-op op (map (lambda (exp)
                                         (offline-exp exp store))

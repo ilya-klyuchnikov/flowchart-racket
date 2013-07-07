@@ -74,8 +74,7 @@
 (define make-init-store
   (lambda (vars static-params static-vals dynamic-params)
     (let* ((store          (initialize-table vars
-                                             (static init-store-val)
-                                             empty-table))
+                                             (static init-store-val)))
            (store-w/sta    (update-table* static-params
                                           (map static static-vals)
                                           store))
@@ -131,7 +130,7 @@
            ;;
            (blockmap (update-table* (map block-label blocks)
                                     blocks
-                                    empty-table))
+                                    (hash)))
            (pending         (add-pending init-state empty-pending))
            (seen            empty-set)
            ;;
@@ -168,8 +167,7 @@
                           ;; not seen, so set up for next transition
                           (let* ((new-states/res-block
                                   (online-block
-                                   (lookup-table (state-label state)
-                                                 blockmap)
+                                   (hash-ref blockmap (state-label state))
                                    (state-store state)))
                                  (new-states (car new-states/res-block))
                                  (res-block  (cdr new-states/res-block)))
@@ -233,12 +231,11 @@
            (pe-val (online-exp exp store)))
       (match pe-val
         [(static obj)
-         (cons (update-table var pe-val store)
+         (cons (hash-set store var pe-val)
                '())]
         [(dynamic obj)
-         (cons (update-table var
-                             (dynamic (varref var))
-                             store)
+         (cons (hash-set store var
+                             (dynamic (varref var)))
                (list (assign var
                              obj)))]
         [else (error "Invalid pe-value in online-assign: " pe-val)]))))
@@ -294,7 +291,7 @@
   (lambda (exp store)
     (match exp
       [(const datum) (static datum)]
-      [(varref var)  (lookup-table var store)]
+      [(varref var)  (hash-ref store var)]
       [(app op exps) (online-op op (map (lambda (exp)
                                           (online-exp exp store))
                                         exps))]

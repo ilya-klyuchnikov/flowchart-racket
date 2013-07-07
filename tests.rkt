@@ -79,6 +79,7 @@
 
 ;; online pe
 (define power (file->value "examples/power.fcl"))
+;(eval-fcl (unparse-program (online-prog (parse-program power) '(n) '(1))) '(5))
 (check-equal? (eval-fcl (unparse-program (online-prog (parse-program power) '(n) '(1))) '(5)) 5)
 (check-equal? (eval-fcl (unparse-program (online-prog (parse-program power) '(n) '(2))) '(5)) 25)
 

@@ -80,11 +80,10 @@
            ;;
            ;; make initial store
            ;;
-           (vars           (collect-vars prog))    ;; get all prog vars
+           (vars           (collect-vars prog))    ;; get all prog vars           
            (pre-init-store (initialize-table       ;; initialize all vars to
                             vars                  ;;   default value
-                            init-store-val        
-                            empty-table))
+                            init-store-val))
            (init-store     (update-table*          ;; initialize parameter
                             params                ;;   values
                             args
@@ -95,7 +94,7 @@
            (init-state (state init-label init-store))
            (blockmap (update-table* (map block-label blocks)
                                     blocks
-                                    empty-table)))
+                                    (hash))))
       ;;
       ;; do transitions until halt<v> is reached
       ;;
@@ -114,9 +113,8 @@
   (lambda (init-state blockmap)
     (letrec ((transition (lambda (state)
                            (let* ((result-state (eval-block
-                                                 (lookup-table
-                                                  (state-label state)
-                                                  blockmap)
+                                                 (hash-ref blockmap
+                                                  (state-label state))
                                                  (state-store state)))
                                   ;;
                                   ;; debugging procedure
@@ -150,7 +148,7 @@
     (let ((val (eval-exp (assign-exp assign)
                          store))
           (var (assign-var assign)))
-      (update-table var val store))))
+      (hash-set store var val))))
 
 ;;(jump x store) -> label
 (define eval-jump
@@ -169,7 +167,7 @@
   (lambda (exp store)
     (match exp
       [(const datum) datum]
-      [(varref var) (lookup-table var store)]
+      [(varref var) (hash-ref store var)]
       [(app op exps) (eval-op
                       op
                       (map (lambda (exp) (eval-exp exp store))

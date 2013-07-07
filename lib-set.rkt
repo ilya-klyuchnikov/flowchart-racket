@@ -14,29 +14,23 @@
 ;;====================================================================
 (provide (all-defined-out))
 
-(define empty-set '())
+(define empty-set '
+  ())
 
-(define empty-set?
-  (lambda (set)
-    (equal? set empty-set)))
+(define (empty-set? set)  
+  (equal? set empty-set))
 
-(define singleton-set list)
+(define singleton-set 
+  list)
 
-(define in-set?
-  (lambda (element set)
-    (if (null? set)
-        #f
-        (if (equal? element (car set))
-            #t
-            (in-set? element (cdr set))))))
+(define (in-set? element set) 
+  (member element set))
 
-(define add-set
-  (lambda (element set)
-    (union-set (singleton-set element) set)))
+(define (add-set element set)
+  (union-set (singleton-set element) set))
 
-(define union-set
-  (lambda (set1 set2)
-    (append set1 (diff-set set2 set1))))
+(define (union-set set1 set2)
+    (remove-duplicates (append set1 set2)))
 
 (define union*-set
   (lambda (set-list)
@@ -44,15 +38,7 @@
         '()
         (union-set (car set-list) (union*-set (cdr set-list))))))
 
-(define diff-set
-  (lambda (set1 set2)
-    (if (null? set1)
-        '()
-        (if (memq #t (map (lambda (state)
-                            (equal? (car set1) state))
-                          set2))
-            (diff-set (cdr set1) set2)
-            (cons (car set1) (diff-set (cdr set1) set2))))))
+(define (diff-set s1 s2) (remove* s2 s1))
 
 (define inter-set
   (lambda (set1 set2)
