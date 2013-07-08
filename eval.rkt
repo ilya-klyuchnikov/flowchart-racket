@@ -69,138 +69,71 @@
 ;;--------------------------------------------------------------
 
 ;;(prog x args) -> value
-(define eval-prog
-  (lambda (prog args)
-    (let* (;;
-           ;; get program pieces
-           ;;
-           (params     (program-params prog))
-           (blocks     (program-blocks prog))
-           (init-label (program-init-label prog))
-           ;;
-           ;; make initial store
-           ;;
-           (vars           (collect-vars prog))    ;; get all prog vars           
-           (pre-init-store (initialize-table       ;; initialize all vars to
-                            vars                  ;;   default value
-                            init-store-val))
-           (init-store     (update-table*          ;; initialize parameter
-                            params                ;;   values
-                            args
-                            pre-init-store))
-           ;;
-           ;; make initial state and blockmap
-           ;;
-           (init-state (state init-label init-store))
-           (blockmap (update-table* (map block-label blocks)
-                                    blocks
-                                    (hash))))
-      ;;
-      ;; do transitions until halt<v> is reached
-      ;;
-      (compute-transitions init-state
-                           blockmap))))
+(define (eval-prog prog args)
+  (let* (;; get program pieces
+         (params     (program-params prog))
+         (blocks     (program-blocks prog))
+         (init-label (program-init-label prog))
+         ;; make initial store
+         (vars           (collect-vars prog))    ;; get all prog vars           
+         (pre-init-store (initialize-table       ;; initialize all vars to
+                          vars                  ;;   default value
+                          init-store-val))
+         (init-store     (update-table*          ;; initialize parameter
+                          params                ;;   values
+                          args
+                          pre-init-store))
+         ;; make initial state and blockmap
+         (init-state (state init-label init-store))
+         (blockmap (update-table* (map block-label blocks)
+                                  blocks
+                                  (hash))))
+    ;; do transitions until halt<v> is reached
+    (compute-transitions init-state blockmap)))
 
 
 ;;---------------------------------------------------------------
-;; compute-transitions: (state x blockmap) -> value
-;;
-;;   Does state transitions until (halt<v>, store) is reached
-;;
+;; compute-transitions: (state blockmap) -> value
+;; Does state transitions until (halt<v>, store) is reached
 ;;---------------------------------------------------------------
-
-(define compute-transitions
-  (lambda (init-state blockmap)
-    (letrec ((transition (lambda (state)
-                           (let* ((result-state (eval-block
-                                                 (hash-ref blockmap
-                                                  (state-label state))
-                                                 (state-store state)))
-                                  ;;
-                                  ;; debugging procedure
-                                  ;;   (see bottom of file)
-                                  ;;
-                                  (temp (eval-debug state)))
-                             (if (halt? (state-label result-state))
-                                 (halt-value (state-label result-state))
-                                 (transition result-state))))))
-      (transition init-state))))
+(define (compute-transitions st blockmap)
+  (define (transition st)
+    (match (eval-block (hash-ref blockmap (state-label st)) (state-store st))
+      [(state (halt v) _) v]
+      [s1 (transition s1)]))      
+  (transition st))
 
 
-;; (block x store) -> state
-(define eval-block
-  (lambda (block store)
-    (let* ((new-store (eval-assigns (block-assigns block) store))
-           (new-label (eval-jump (block-jump block) new-store)))
-      (state new-label new-store))))
+;; (block store) -> state
+(define (eval-block block store)
+  (let* ([store1 (eval-assigns (block-assigns block) store)]
+         [label1 (eval-jump (block-jump block) store1)])
+    (state label1 store1)))
 
-;;(assigns x store) -> store
-(define eval-assigns
-  (lambda (assigns store)
-    (if (null? assigns)
-        store
-        (let ((new-store (eval-assign (car assigns) store)))
-          (eval-assigns (cdr assigns) new-store)))))
+;;(assigns store) -> store
+(define (eval-assigns assigns store)
+  (match assigns
+    ['() store]
+    [(cons a as) (eval-assigns as (eval-assign a store))]))
 
-;;(assign x store) -> store
-(define eval-assign
-  (lambda (assign store)
-    (let ((val (eval-exp (assign-exp assign)
-                         store))
-          (var (assign-var assign)))
-      (hash-set store var val))))
+;;(assign store) -> store
+(define (eval-assign asgn store)
+  (match asgn 
+    [(assign v exp) (hash-set store v (eval-exp exp store))]))
 
-;;(jump x store) -> label
-(define eval-jump
-  (lambda (jump store)
-    (match jump
-      [(goto label) label]
-      [(return exp) (halt (eval-exp exp store))]
-      [(if-jump exp then-label else-label)
-       (if (is-true? (eval-exp exp store))
-           then-label
-           else-label)]
-      [else (error "Unrecognized jump in eval-jump: " jump)])))
+;;(jump store) -> label
+(define (eval-jump jump store)
+  (match jump
+    [(goto label) label]
+    [(return exp) (halt (eval-exp exp store))]
+    [(if-jump exp l1 l2)
+     (if (is-true? (eval-exp exp store)) l1 l2)]
+    [_ (error "Unrecognized jump in eval-jump: " jump)]))
 
 ;;(exp x store) -> value
-(define eval-exp
-  (lambda (exp store)
-    (match exp
-      [(const datum) datum]
-      [(varref var) (hash-ref store var)]
-      [(app op exps) (eval-op
-                      op
-                      (map (lambda (exp) (eval-exp exp store))
-                           exps))]
-      ;; note: eval-op is in lib-fcl-shared.scm
-      [else (error "Unrecognized exp in eval-exp: " exp)])))
-
-
-;;------------------------------------------------------------
-;;  Debugging and Tracing
-;;
-;;   - state values can be printed/suppressed by changing value
-;;  of debug-level variable below.
-;;
-;;
-;; debug-level = 0 : no debug info
-;; debug-level > 0 : print out contents of state on each transition
-;;
-;;------------------------------------------------------------
-
-(define debug-level 0)
-
-(define eval-debug
-  (lambda (state)
-    (if (> debug-level 0)
-        (begin
-          (display "-------------------------------")
-          (newline)
-          (display "LABEL: ")
-          (pretty-print (state-label state))
-          (newline)
-          (display "STORE: ")
-          (newline)
-          (pretty-print (state-store state))
-          (newline))
-        '())))
+(define (eval-exp exp store)
+  (match exp
+    [(const datum) datum]
+    [(varref var) (hash-ref store var)]
+    [(app op exps) (eval-op op (map (λ (exp) (eval-exp exp store)) exps))]
+    [_ (error "Unrecognized exp in eval-exp: " exp)]))
