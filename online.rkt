@@ -73,17 +73,17 @@
 
 (define make-init-store
   (lambda (vars static-params static-vals dynamic-params)
-    (let* ((store          (initialize-table vars
+    (let* ((store          (hash-init vars
                                              (static init-store-val)))
-           (store-w/sta    (update-table* static-params
+           (store-w/sta    (hash-set-kv* store static-params
                                           (map static static-vals)
-                                          store))
-           (store-w/sta/dyn (update-table* dynamic-params
+                                          ))
+           (store-w/sta/dyn (hash-set-kv* store-w/sta dynamic-params
                                            (map (lambda (var)
                                                   (dynamic
                                                    (varref var)))
                                                 dynamic-params)
-                                           store-w/sta)))
+                                           )))
       store-w/sta/dyn)))
 
 
@@ -128,9 +128,9 @@
            ;;
            ;; make blockmap, pending list, seen set
            ;;
-           (blockmap (update-table* (map block-label blocks)
+           (blockmap (hash-kv (map block-label blocks)
                                     blocks
-                                    (hash)))
+                                    ))
            (pending         (add-pending init-state empty-pending))
            (seen            empty-set)
            ;;

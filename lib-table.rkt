@@ -1,6 +1,6 @@
 #lang racket
 
-(provide update-table* initialize-table restrict-table)
+(provide hash-set-kv* hash-init restrict-table hash-kv)
 
 ; utils
 (define (interleave xs ys) 
@@ -9,10 +9,13 @@
 (define (pair->list p) (list (car p) (cdr p)))
 (define (flat-pairs ls) (apply append (map pair->list ls)))
 
-(define (update-table* keys vals table)
+(define (hash-kv keys vals) 
+  (apply hash (interleave keys vals)))
+
+(define (hash-set-kv* table keys vals)
   (apply hash-set* (cons table (interleave keys vals))))
 
-(define (initialize-table keys value)
+(define (hash-init keys value)
   (apply hash (append-map (λ (x) (list x value)) keys)))
 
 (define (restrict-table pred? table)

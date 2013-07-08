@@ -364,9 +364,9 @@
            ;;
            (dynamic-vars    (hash-keys (restrict-table dynamic? div)))
            (static-vars     (diff-set vars dynamic-vars))
-           (param-store     (update-table* static-params
+           (param-store     (hash-kv static-params
                                            static-vals
-                                           (hash)))
+                                           ))
            (lifted-params   (inter-set static-params dynamic-vars))
            ;;
            ;; make initial store, state, blockmap, pending, seen structures
@@ -377,9 +377,9 @@
            (init-state      (state init-label init-store))
            (tmp             (state-to-label! 'reset))
            (res-init-label  (state-to-label! 'convert init-state))
-           (blockmap (update-table* (map block-label blocks-2)
+           (blockmap (hash-kv (map block-label blocks-2)
                                     blocks-2
-                                    (hash)))
+                                    ))
            (pending         (add-pending init-state empty-pending))
            (seen            empty-set)
            ;;
@@ -429,12 +429,12 @@
 ;; notice how this parallels make initial store in online case
 (define make-init-div
   (lambda (vars static-params dynamic-params)
-    (let* ((div-w/sta     (initialize-table vars (static '())))
-           (div-w/sta/dyn (update-table* dynamic-params
+    (let* ((div-w/sta     (hash-init vars (static '())))
+           (div-w/sta/dyn (hash-set-kv* div-w/sta dynamic-params
                                          (map (lambda (var)
                                                 (dynamic '()))
                                               dynamic-params)
-                                         div-w/sta)))
+                                         )))
       div-w/sta/dyn)))
 
 
@@ -449,7 +449,7 @@
 
 (define make-init-store
   (lambda (static-vars static-params param-store)
-    (update-table* static-vars 
+    (hash-kv static-vars 
                    (map (lambda (var)
                           (if (memq var static-params)
                               (hash-ref
@@ -457,7 +457,7 @@
                                var)
                               init-store-val))
                         static-vars)
-                   (hash))))
+                   )))
 
 ;; -- note identical to online
 ;;(state x blockmap) -> value
