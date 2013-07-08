@@ -219,28 +219,20 @@
 
 
 (define state-to-label!
-  (let ((state-table       '())
-        (next-label-number 0))
+  (let ([state-table (make-hash)])
     (lambda (command . args)
       (case command
-        ((convert) (let* ((state (car args))
-                          (label (state-label state))
-                          (in-list (assoc state state-table)))
-                     (if in-list
-                         (cdr in-list)
-                         (let ((new-label (string->symbol
-                                           (string-append
-                                            (symbol->string label)
-                                            "-"
-                                            (number->string
-                                             next-label-number)))))
-                           (begin
-                             (set! next-label-number (+ next-label-number 1))
-                             (set! state-table (cons (cons state new-label)
-                                                     state-table))
-                             new-label)))))
-        ((print) (pretty-print (reverse state-table)))
-        ((reset) (begin
-                   (set! state-table '())
-                   (set! next-label-number 0)))
-        (else (error "Bad command to state-to-label-numbers: " command))))))  
+        ['convert 
+         (let ((st (car args)))
+           (unless (hash-has-key? state-table st)
+             (hash-set! 
+              state-table 
+              st 
+              (string->symbol (string-append (~a (state-label st)) "-" (~a (hash-count state-table))))))
+           (hash-ref state-table st))]
+        ['print 
+         (pretty-print state-table)]
+        ['reset 
+         (set! state-table (make-hash))]
+        [else 
+         (error "Bad command to state-to-label-numbers: " command)]))))

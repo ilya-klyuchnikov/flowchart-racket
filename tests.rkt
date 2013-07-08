@@ -86,7 +86,7 @@
 (check-equal? (eval-fcl (unparse-program (offline-prog (parse-program power) '(n) '(1))) '(5)) 5)
 (check-equal? (eval-fcl (unparse-program (offline-prog (parse-program power) '(n) '(2))) '(5)) 25)
 
-;(online-prog (parse-program power) '(n) '(1))
+(online-prog (parse-program power) '(n) '(1))
 
 (define t-prog (file->value "examples/turing.rkt"))
 
