@@ -85,3 +85,20 @@
 
 (check-equal? (eval-fcl (unparse-program (offline-prog (parse-program power) '(n) '(1))) '(5)) 5)
 (check-equal? (eval-fcl (unparse-program (offline-prog (parse-program power) '(n) '(2))) '(5)) 25)
+
+;(online-prog (parse-program power) '(n) '(1))
+
+(define t-prog (file->value "examples/turing.rkt"))
+
+(define Q1
+  '((0 if  0 goto 4)
+    (1 if -1 goto 4)
+    (2 right) 
+    (3 goto 0) 
+    (4 write 1)))
+
+(define Q2
+  '((0 write 1)))
+
+(define s1 (unparse-program (online-prog (parse-program t-prog) '(Q) (list Q1))))
+(check-equal? (eval-fcl s1 (list '(0 0))) '(1 0))
