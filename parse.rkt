@@ -60,7 +60,7 @@
 ;; New primitives added by user must be added to this list.
 ;;
 (define primitives
-  '(+ - * / % = < > car cdr cons null list null? pair? list? test))
+  '(+ - * / % = < > car cdr cons null list null? pair? list? test hd tl))
 
 (define (primitive? prim)
   (member prim primitives))
@@ -86,7 +86,7 @@
 
 (define (parse-exp exp)
   (match exp
-    [(cons 'quote e) e]
+    [(list 'quote e) (const e)]
     [(cons (and op (? primitive?)) args) (app op (map parse-exp args))]
     [(? number?) (const exp)]
     [(? primitive?) (app exp '())]
@@ -111,7 +111,8 @@
   (match exp
     [(app op exps) (cons op (map unparse-exp exps))]
     [(varref var) var]
-    [(const datum) (quasiquote (unquote datum))]
+    [(const (and datum (? number?))) datum]
+    [(const datum) (list 'quote datum)]
     [_ (error "Unparse: invalid exp AST: " exp)]))
 
 (define (unparse-jump exp)

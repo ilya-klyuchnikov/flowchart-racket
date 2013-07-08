@@ -21,18 +21,18 @@
 
 ;;(prog args) -> value
 (define (eval-prog prog args)
-  (let* ([params (program-params prog)]
-         [blocks (program-blocks prog)]
-         [vars   (collect-vars prog)]
-         [label0 (program-init-label prog)]
+  (let* ([params  (program-params prog)]
+         [blocks  (program-blocks prog)]
+         [vars    (collect-vars prog)]
          [store0  (hash-set-kv* (hash-init vars init-store-val) params args)]
-         [state0 (state label0 store0)]
+         [state0  (state (program-init-label prog) store0)]
          [blockmap (hash-kv (map block-label blocks) blocks)])
     (compute-transitions state0 blockmap)))
 
 ;;(state blockmap) -> value
 (define (compute-transitions st blockmap)
   (define (transition st)
+    (eval-debug (eval-block (hash-ref blockmap (state-label st)) (state-store st)))
     (match (eval-block (hash-ref blockmap (state-label st)) (state-store st))
       [(state (halt v) _) v]
       [s1 (transition s1)]))      
@@ -55,7 +55,7 @@
   (match asgn 
     [(assign v exp) (hash-set store v (eval-exp exp store))]))
 
-;;(jump store) -> label
+;;(jump store) -> label | (halt value)
 (define (eval-jump jump store)
   (match jump
     [(goto label) label]
@@ -68,3 +68,20 @@
     [(const datum) datum]
     [(varref var) (hash-ref store var)]
     [(app op exps) (eval-op op (map (λ (exp) (eval-exp exp store)) exps))]))
+
+(define debug-level 0)
+
+(define eval-debug
+  (lambda (state)
+    (if (> debug-level 0)
+        (begin
+          (display "-------------------------------")
+          (newline)
+          (display "LABEL: ")
+          (pretty-print (state-label state))
+          (newline)
+          (display "STORE: ")
+          (newline)
+          (pretty-print (state-store state))
+          (newline))
+        '())))

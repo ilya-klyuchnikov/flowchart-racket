@@ -86,6 +86,8 @@
       ((null?) (make-FCL-boolean (null? (car vals))))
       ((pair?) (make-FCL-boolean (pair? (car vals))))
       ((list?) (make-FCL-boolean (pair? (car vals))))
+      ((hd) (match (car vals) [(cons x _) x] [_ -1]) )
+      ((tl) (match (car vals) [(cons _ x) x] [_ '()]) )
       ;;
       ;; misc
       ;;

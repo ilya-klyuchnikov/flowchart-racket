@@ -362,7 +362,7 @@
            ;;
            ;; set up to make initial store
            ;;
-           (dynamic-vars    (hash-keys (restrict-table dynamic? div)))
+           (dynamic-vars    (hash-keys (hash-filter-by-val div dynamic?)))
            (static-vars     (diff-set vars dynamic-vars))
            (param-store     (hash-kv static-params
                                            static-vals
