@@ -1,6 +1,6 @@
 #lang racket
 
-(require "parse.rkt" "eval.rkt")
+(require "parse.rkt" "eval.rkt" "online.rkt")
 
 (define t-prog (file->value "examples/turing.rkt"))
 
@@ -19,3 +19,8 @@
 
 (eval-fcl t-prog (list Q1 right1))
 (eval-fcl t-prog (list Q1 right2))
+
+(online-file "examples/power.fcl"
+                 '(n)
+                 '(2)
+                 "outputs/power-2.fcl")

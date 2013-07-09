@@ -162,25 +162,12 @@
   (lambda (pe-val)
     (match pe-val
       [(static obj) obj]
-      [(dynamic obj) obj]
-      [else (error "Unrecognized pe-val in pe-val->object: " pe-val)])))
+      [(dynamic obj) obj])))
 
-
-;;-----------------------------
-;;
-;; File I/O
-;;
-;;   Simply procedures to get and put a single object to a file
-;;
-;;-----------------------------
-
-(define put-file-object
-  (lambda (out-file-name obj)
-    (let ((out    (open-output-file out-file-name)))
-      (begin
-        (pretty-print obj out)
-        (close-output-port out)))))
-
+(define (pretty-print->file path obj)
+  (call-with-output-file path 
+    (λ (out) (pretty-print obj out)) 
+    #:exists 'replace))
 
 ;; utilities for managing state->label map
 (define (make-label state i)

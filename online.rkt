@@ -58,7 +58,7 @@
                                                  static-params
                                                  static-vals))))
       (begin
-        (put-file-object out-file-name result)
+        (pretty-print->file out-file-name result)
         (pretty-print result)))))
 
 ;;--------------------------------------------------------------
