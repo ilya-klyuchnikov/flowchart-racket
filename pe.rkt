@@ -1,9 +1,12 @@
 #lang racket
 
-(provide (all-defined-out))
+(provide (struct-out static) 
+         (struct-out dynamic) 
+         pe-val->object state->label state->label-reset)
+
 (require "eval.rkt")
 
-(struct static (obj) #:transparent)
+(struct static  (obj) #:transparent)
 (struct dynamic (obj) #:transparent)
 
 (define (pe-val->object pe-val)

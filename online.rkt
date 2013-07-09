@@ -12,12 +12,11 @@
 
 (provide (all-defined-out))
 
-(require "parse.rkt")             ;; parsing procedures
+(require "parse.rkt") 
 (require "eval.rkt")
-(require "pe.rkt")    ;; misc helper procedures
-(require "util.rkt")         ;; table procedures (for store, blockmap)
-(require "lib-pending.rkt")       ;; pending list 
-(require "lib-set.rkt")           ;; set operations (for seen set)
+(require "pe.rkt")    
+(require "util.rkt")  
+(require "lib-pending.rkt")
 ;;--------------------------------------------------------------
 ;;  Top-level calls
 ;;
@@ -112,7 +111,7 @@
            ;;  used in a program
            ;;
            (vars            (collect-vars prog))   
-           (dynamic-params  (diff-set params static-params))
+           (dynamic-params  (remove* static-params params))
            (init-store      (make-init-store vars
                                              static-params
                                              static-vals
@@ -132,7 +131,7 @@
                               blocks
                               ))
            (pending         (add-pending init-state empty-pending))
-           (seen            empty-set)
+           (seen            '())
            ;;
            ;; Do Online PE transitions until pending list is empty.
            ;; We get residual blocks as a result.  Then make the 
@@ -163,7 +162,7 @@
                                                             new-pending
                                                             seen
                                                             res-blocks)))
-                      (if (not (in-set? state seen))
+                      (if (not (member state seen))
                           ;; not seen, so set up for next transition
                           (let* ((new-states/res-block
                                   (online-block

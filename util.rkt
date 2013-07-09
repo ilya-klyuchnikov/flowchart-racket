@@ -6,7 +6,10 @@
   hash-init
   hash-filter-by-val
   hash-kv
-  pretty-print->file)
+  pretty-print->file
+  add-set 
+  union 
+  intersect)
 
 ;internal utilities
 (define (interleave xs ys)
@@ -35,3 +38,14 @@
   (call-with-output-file path 
     (λ (out) (pretty-print obj out)) 
     #:exists 'replace))
+
+;; working with lists as with sets
+(define (add-set element set)
+  (union (list element) set))
+
+(define (union set1 set2)
+  (remove-duplicates (append set1 set2)))
+
+(define (intersect set1 set2)
+  (for/list ([i set1] #:unless (member i set2)) i))
+

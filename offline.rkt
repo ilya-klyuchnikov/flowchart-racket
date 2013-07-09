@@ -16,10 +16,9 @@
 (provide offline-prog)
 (require "parse.rkt")
 (require "eval.rkt")
-(require "pe.rkt")    ;; misc helper procedures
-(require "util.rkt")         ;; table procedures (for store, blockmap)
-(require "lib-pending.rkt")       ;; pending list 
-(require "lib-set.rkt")           ;; set operations (for seen set)
+(require "pe.rkt")    
+(require "util.rkt")  
+(require "lib-pending.rkt")
 
 ;;----------------------------------------------------------------
 ;; Two-level syntax
@@ -345,7 +344,7 @@
            ;;
            ;; make initial division
            ;;
-           (dynamic-params  (diff-set params static-params))
+           (dynamic-params  (remove* static-params params))
            (vars            (collect-vars prog))
            (init-div        (make-init-div vars
                                            static-params
@@ -361,11 +360,11 @@
            ;; set up to make initial store
            ;;
            (dynamic-vars    (hash-keys (hash-filter-by-val div dynamic?)))
-           (static-vars     (diff-set vars dynamic-vars))
+           (static-vars     (remove* dynamic-vars vars))
            (param-store     (hash-kv static-params
                                      static-vals
                                      ))
-           (lifted-params   (inter-set static-params dynamic-vars))
+           (lifted-params   (intersect static-params dynamic-vars))
            ;;
            ;; make initial store, state, blockmap, pending, seen structures
            ;;
@@ -379,7 +378,7 @@
                               blocks-2
                               ))
            (pending         (add-pending init-state empty-pending))
-           (seen            empty-set)
+           (seen            '())
            ;;
            ;;  run offline pe transitions until done, res blocks returned
            ;;
@@ -471,7 +470,7 @@
                                                              new-pending
                                                              seen
                                                              res-blocks)))
-                      (if (not (in-set? state seen))
+                      (if (not (member state seen))
                           (let* ((new-states/res-block
                                   (offline-block
                                    (hash-ref blockmap (state-label state))
@@ -674,7 +673,7 @@
 (define offline-debug-div
   (lambda (prog static-params)
     (let* ((params          (program-params prog))
-           (dynamic-params  (diff-set params static-params))
+           (dynamic-params  (remove* static-params params))
            (vars            (collect-vars prog))
            (init-div        (make-init-div vars
                                            static-params
@@ -685,7 +684,7 @@
 (define offline-debug-ann
   (lambda (prog static-params)
     (let* ((params          (program-params prog))
-           (dynamic-params  (diff-set params static-params))
+           (dynamic-params  (remove* static-params params))
            (vars            (collect-vars prog))
            (init-div        (make-init-div vars
                                            static-params
