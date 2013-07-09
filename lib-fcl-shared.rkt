@@ -174,14 +174,6 @@
 ;;
 ;;-----------------------------
 
-(define get-file-object
-  (lambda (in-file-name)
-    (let* ((in     (open-input-file in-file-name))
-           (obj    (read in)))
-      (begin
-        (close-input-port in)
-        obj))))
-
 (define put-file-object
   (lambda (out-file-name obj)
     (let ((out    (open-output-file out-file-name)))

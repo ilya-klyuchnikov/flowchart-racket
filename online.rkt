@@ -53,7 +53,7 @@
 
 (define online-file
   (lambda (in-file-name static-params static-vals out-file-name)
-    (let* ((prog   (get-file-object in-file-name))
+    (let* ((prog   (file->value in-file-name))
            (result (unparse-program (online-prog (parse-program prog)
                                                  static-params
                                                  static-vals))))
