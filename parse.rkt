@@ -60,7 +60,7 @@
 ;; New primitives added by user must be added to this list.
 ;;
 (define primitives
-  '(+ - * / % = < > car cdr cons null list null? pair? list? test hd tl))
+  '(+ - * < > car cdr cons null list equal? null? pair? list? test hd tl))
 
 (define (primitive? prim)
   (member prim primitives))

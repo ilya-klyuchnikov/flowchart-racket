@@ -13,11 +13,11 @@
 (provide (all-defined-out))
 
 (require "parse.rkt")             ;; parsing procedures
-(require "lib-fcl-shared.rkt")    ;; misc helper procedures
-(require "lib-table.rkt")         ;; table procedures (for store, blockmap)
+(require "eval.rkt")
+(require "pe.rkt")    ;; misc helper procedures
+(require "util.rkt")         ;; table procedures (for store, blockmap)
 (require "lib-pending.rkt")       ;; pending list 
 (require "lib-set.rkt")           ;; set operations (for seen set)
-(require "eval.rkt")
 ;;--------------------------------------------------------------
 ;;  Top-level calls
 ;;
@@ -74,7 +74,7 @@
 (define make-init-store
   (lambda (vars static-params static-vals dynamic-params)
     (let* ((store          (hash-init vars
-                                      (static init-store-val)))
+                                      (static init-val)))
            (store-w/sta    (hash-set-kv* store static-params
                                          (map static static-vals)
                                          ))

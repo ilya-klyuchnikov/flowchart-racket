@@ -1,15 +1,28 @@
 #lang racket
 
-(provide eval-fcl eval-fcl-file)
+(provide eval-fcl eval-fcl-file eval-op init-val (struct-out state) (struct-out halt) halt-state?)
 
 (require "parse.rkt")
-(require "lib-fcl-shared.rkt")
-(require "lib-table.rkt")
+(require "util.rkt")
 
 ;;  Examples:
 ;;  > (define power (file->value "examples/power.fcl"))
 ;;  > (eval-fcl power '(5 2))
 ;;  > (eval-fcl-file "examples/power.fcl" '(5 2))
+
+(define init-val null)
+(struct state (label store) #:transparent)
+(struct halt (value) #:transparent)
+(define (halt-state? state) (halt? (state-label state)))
+
+;; TODO: is it possible to make it more elegant??
+(define (hd l) (if (empty? l) -1 (first l)))
+(define (tl l) (if (empty? l) '() (rest l)))
+(define-namespace-anchor a)
+(define ns (namespace-anchor->namespace a))
+
+(define (eval-op op args)  
+  (apply (eval op ns) args))
 
 (define (eval-fcl prog args)
   (eval-prog (parse-program prog) args))
@@ -24,7 +37,7 @@
   (let* ([params  (program-params prog)]
          [blocks  (program-blocks prog)]
          [vars    (collect-vars prog)]
-         [store0  (hash-set-kv* (hash-init vars init-store-val) params args)]
+         [store0  (hash-set-kv* (hash-init vars init-val) params args)]
          [state0  (state (program-init-label prog) store0)]
          [blockmap (hash-kv (map block-label blocks) blocks)])
     (compute-transitions state0 blockmap)))

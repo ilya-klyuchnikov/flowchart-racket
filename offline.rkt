@@ -15,8 +15,9 @@
 
 (provide offline-prog)
 (require "parse.rkt")
-(require "lib-fcl-shared.rkt")    ;; misc helper procedures
-(require "lib-table.rkt")         ;; table procedures (for store, blockmap)
+(require "eval.rkt")
+(require "pe.rkt")    ;; misc helper procedures
+(require "util.rkt")         ;; table procedures (for store, blockmap)
 (require "lib-pending.rkt")       ;; pending list 
 (require "lib-set.rkt")           ;; set operations (for seen set)
 
@@ -417,7 +418,7 @@
                                           (car vars))))
                           (make-assigns (cdr vars)))))))
       (block
-       sys-lift-block-label
+       'system-block
        (make-assigns lifted-params)
        (goto res-init-label)))))
 
@@ -452,7 +453,7 @@
                         (hash-ref
                          param-store
                          var)
-                        init-store-val))
+                        init-val))
                   static-vars)
              )))
 

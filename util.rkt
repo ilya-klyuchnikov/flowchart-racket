@@ -1,10 +1,12 @@
 #lang racket
 
+;; different utils
 (provide
   hash-set-kv*
   hash-init
   hash-filter-by-val
-  hash-kv)
+  hash-kv
+  pretty-print->file)
 
 ;internal utilities
 (define (interleave xs ys)
@@ -28,3 +30,8 @@
 
 (define (hash-filter-by-val h pred?)
   (apply hash (flat-pairs (filter (λ (p) (pred? (cdr p))) (hash->list h)))))
+
+(define (pretty-print->file path obj)
+  (call-with-output-file path 
+    (λ (out) (pretty-print obj out)) 
+    #:exists 'replace))
