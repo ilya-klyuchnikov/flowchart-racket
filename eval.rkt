@@ -60,7 +60,7 @@
   (match jump
     [(goto label) label]
     [(return exp) (halt (eval-exp exp store))]
-    [(if-jump exp l1 l2) (if (is-true? (eval-exp exp store)) l1 l2)]))
+    [(if-jump exp l1 l2) (if (eval-exp exp store) l1 l2)]))
 
 ;;(exp x store) -> value
 (define (eval-exp exp store)

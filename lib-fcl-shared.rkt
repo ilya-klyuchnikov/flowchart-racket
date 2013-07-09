@@ -1,33 +1,6 @@
 #lang racket
-;;====================================================================
-;;
-;; File: lib-fcl-shared.scm
-;; Author: John Hatcliff and Shawn Laubach
-;; Last modified: June 28, 1998
-;;
-;; Contains procedures that are shared between evaluator and
-;; partial evaluators, e.g.,
-;;
-;;   - system constants (initial store value, etc.)
-;;   - definitions of state data structures
-;;   - procedures for evaluation of primitives
-;;   - procedures that simply getting and putting objects to a file
-;;   - common list functions (e.g., foldr and friends)
-;;   - static/dynamic tags for PE's
-;;   - label management for residual programs
-;;
-;;====================================================================
 
 (provide (all-defined-out))
-;;-----------------------------
-;;
-;; System constants
-;;
-;;-----------------------------
-
-;;
-;; Initial store value
-;;
 (define init-store-val 0)                 
 
 ;;
@@ -45,9 +18,8 @@
 (struct state (label store) #:transparent)
 (struct halt (value) #:transparent)
 
-(define halt-state?
-  (lambda (state)
-    (halt? (state-label state))))
+(define (halt-state? state)
+  (halt? (state-label state)))
 
 
 ;;-----------------------------
@@ -56,7 +28,7 @@
 ;;
 ;;-----------------------------
 
-;;(op x args) -> value 
+;;(op args) -> value 
 (define eval-op
   (lambda (op vals)
     (case op
@@ -70,10 +42,9 @@
                      (cadr vals)))
       ((%) (modulo    (car vals)
                       (cadr vals)))
-      ((=) (make-FCL-boolean (equal? (car vals)
-                                     (cadr vals))))
-      ((<) (make-FCL-boolean (< (car vals) (cadr vals))))
-      ((>) (make-FCL-boolean (> (car vals) (cadr vals))))
+      ((=) (equal? (car vals) (cadr vals)))
+      ((<) (< (car vals) (cadr vals)))
+      ((>) (> (car vals) (cadr vals)))
       ;;
       ;; list stuff
       ;;
@@ -83,69 +54,18 @@
                     (cadr vals)))
       ((null) '())
       ((list) vals)
-      ((null?) (make-FCL-boolean (null? (car vals))))
-      ((pair?) (make-FCL-boolean (pair? (car vals))))
-      ((list?) (make-FCL-boolean (pair? (car vals))))
+      ((null?) (null? (car vals)))
+      ((pair?) (pair? (car vals)))
+      ((list?) (pair? (car vals)))
       ((hd) (match (car vals) [(cons x _) x] [_ -1]) )
       ((tl) (match (car vals) [(cons _ x) x] [_ '()]) )
       ;;
       ;; misc
       ;;
-      ((test) (if (is-true? (car vals))
+      ((test) (if (car vals)
                   (cadr vals)
                   (caddr vals)))
       (else (error "Undefined operation:" op)))))
-
-;;
-;; FCL booleans:
-;;
-;;   true  = non-zero
-;;   false = 0
-;;
-
-;; converts Scheme boolean to FCL boolean
-(define make-FCL-boolean
-  (lambda (boolean)
-    (if boolean
-        1
-        0)))
-
-;; value -> #t | #f
-(define is-true?
-  (lambda (value)
-    (not (equal? value 0))))
-
-;; value -> #t | #f
-(define is-false?
-  (lambda (value)
-    (equal? value 0)))
-
-;;-----------------------------
-;;
-;; List functions
-;;
-;;-----------------------------
-
-(define foldr
-  (lambda (b f)
-    (letrec ((loop (lambda (l)
-                     (if (null? l)
-                         b
-                         (f (car l)
-                            (loop (cdr l)))))))
-      loop)))
-
-(define foldl
-  (lambda (b f)
-    (letrec ((loop (lambda (l acc)
-                     (if (null? l)
-                         acc
-                         (loop (cdr l)
-                               (f (car l) acc))))))
-      (lambda (l) (loop l b)))))
-
-
-
 
 ;;-----------------------------
 ;;
@@ -154,7 +74,6 @@
 ;;   Note: we will use these tags in several different ways.
 ;;   So the field name for the tagged object is simply 'obj'
 ;;-----------------------------
-
 (struct static (obj) #:transparent)
 (struct dynamic (obj) #:transparent)
 

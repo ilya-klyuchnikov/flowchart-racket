@@ -15,7 +15,7 @@
 
 (provide offline-prog)
 (require "parse.rkt")
-(require (except-in "lib-fcl-shared.rkt" eval-op))    ;; misc helper procedures
+(require "lib-fcl-shared.rkt")    ;; misc helper procedures
 (require "lib-table.rkt")         ;; table procedures (for store, blockmap)
 (require "lib-pending.rkt")       ;; pending list 
 (require "lib-set.rkt")           ;; set operations (for seen set)
@@ -181,9 +181,9 @@
            (exp-bt-type (div-exp (assign-exp assign)
                                  div)))
       (hash-set div
-                    var
-                    (bt-type-lub var-bt-type exp-bt-type)
-                    ))))
+                var
+                (bt-type-lub var-bt-type exp-bt-type)
+                ))))
 
 ;(bt-type x bt-type) -> bt-type
 ;;  computes least upper bound on bt-types (order S < D)
@@ -199,10 +199,7 @@
 ;;  computes supremum on list of bt-types (order S < D)
 (define bt-type-lub*
   (lambda (bt-types)
-    ((foldr (static '())
-            bt-type-lub)
-     bt-types)))
-
+    (foldr bt-type-lub (static '()) bt-types)))
 
 ;(exp x div) -> bt-type
 (define div-exp
@@ -365,8 +362,8 @@
            (dynamic-vars    (hash-keys (hash-filter-by-val div dynamic?)))
            (static-vars     (diff-set vars dynamic-vars))
            (param-store     (hash-kv static-params
-                                           static-vals
-                                           ))
+                                     static-vals
+                                     ))
            (lifted-params   (inter-set static-params dynamic-vars))
            ;;
            ;; make initial store, state, blockmap, pending, seen structures
@@ -378,8 +375,8 @@
            (tmp             (state->label-reset))
            (res-init-label  (state->label init-state))
            (blockmap (hash-kv (map block-label blocks-2)
-                                    blocks-2
-                                    ))
+                              blocks-2
+                              ))
            (pending         (add-pending init-state empty-pending))
            (seen            empty-set)
            ;;
@@ -431,33 +428,33 @@
   (lambda (vars static-params dynamic-params)
     (let* ((div-w/sta     (hash-init vars (static '())))
            (div-w/sta/dyn (hash-set-kv* div-w/sta dynamic-params
-                                         (map (lambda (var)
-                                                (dynamic '()))
-                                              dynamic-params)
-                                         )))
+                                        (map (lambda (var)
+                                               (dynamic '()))
+                                             dynamic-params)
+                                        )))
       div-w/sta/dyn)))
 
 
 (define get-dynamic-vars
   (lambda (vars div)
-    ((foldr '()
-            (lambda (var dyn-vars)
-              (if (dynamic? (hash-ref div var))
-                  (cons var dyn-vars)
-                  dyn-vars)))
-     vars)))
+    (foldr 
+     (lambda (var dyn-vars)
+       (if (dynamic? (hash-ref div var))
+           (cons var dyn-vars)
+           dyn-vars)) '()
+                      vars)))
 
 (define make-init-store
   (lambda (static-vars static-params param-store)
     (hash-kv static-vars 
-                   (map (lambda (var)
-                          (if (memq var static-params)
-                              (hash-ref
-                               param-store
-                               var)
-                              init-store-val))
-                        static-vars)
-                   )))
+             (map (lambda (var)
+                    (if (memq var static-params)
+                        (hash-ref
+                         param-store
+                         var)
+                        init-store-val))
+                  static-vars)
+             )))
 
 ;; -- note identical to online
 ;;(state x blockmap) -> value
@@ -507,9 +504,9 @@
                    (state label new-store))
                  new-labels)
             (block (state->label
-                                    (state
-                                     (block-label blk)
-                                     store))
+                    (state
+                     (block-label blk)
+                     store))
                    res-assigns
                    res-jump)))))
 
@@ -546,34 +543,34 @@
     (match jump-2
       [(d-goto label) (cons (list label)
                             (goto (state->label
-                                                   (state label
-                                                          store))))]
+                                   (state label
+                                          store))))]
       [(d-return exp) (let* ((exp1 (offline-exp exp store)))
                         (cons (list (halt '()))
                               (return exp1)))]
       [(if-jump exp then-label else-label)
        (let ((val (offline-exp exp store)))
          (cond
-           ((is-true? val)
+           (val
             (let ((new-then-label (state->label
-                                                   (state then-label
-                                                          store))))
+                                   (state then-label
+                                          store))))
               (cons (list then-label)
                     (goto new-then-label))))
-           ((is-false? val)
+           ((not val)
             (let ((new-else-label (state->label
-                                                   (state else-label
-                                                          store))))
+                                   (state else-label
+                                          store))))
               (cons (list else-label)
                     (goto new-else-label))))
            (else (error "Invalid exp val in offline-jump: " val))))]
       [(d-if exp then-label else-label)
        (let ((new-then-label (state->label
-                                              (state then-label
-                                                     store)))
+                              (state then-label
+                                     store)))
              (new-else-label (state->label
-                                              (state else-label
-                                                     store)))
+                              (state else-label
+                                     store)))
              (exp'           (offline-exp exp store)))
          (cons (list then-label else-label)
                (if-jump exp'
@@ -592,40 +589,13 @@
       [(d-varref var) (varref var)]
       [(app op exps) (eval-op op (map (lambda (exp)
                                         (offline-exp exp store))
-                                      exps)
-                              store)]
+                                      exps))]
       [(d-app op exps) (app op (map (lambda (exp)
                                       (offline-exp exp store))
                                     exps))]
       ;; lift only works for numbers now
       [(lift exp) (const (offline-exp exp store))]
       [else (error "Unrecognized exp in offline-exp: " exp)])))
-
-
-;;(op x args x store) -> value 
-(define eval-op
-  (lambda (op vals store)
-    (case op
-      ((+) (+ (car vals)
-              (cadr vals)))
-      ((-) (- (car vals)
-              (cadr vals)))
-      ((*) (* (car vals)
-              (cadr vals)))
-      ((/) (/ (car vals)
-              (cadr vals)))
-      ((=) (equal? (car vals)
-                   (cadr vals)))
-      ((<) (make-FCL-boolean (< (car vals) (cadr vals))))
-      ((hd) (car (car vals)))
-      ((tl) (cdr (car vals)))
-      ((cons) (cons (car vals)
-                    (cadr vals)))
-      ((list) vals)
-      ((test) (if (is-true? (car vals))
-                  (cadr vals)
-                  (caddr vals)))
-      (else (error "Undefined operation:" op)))))
 
 
 ;;------------------------------------------------------------

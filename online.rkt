@@ -74,16 +74,16 @@
 (define make-init-store
   (lambda (vars static-params static-vals dynamic-params)
     (let* ((store          (hash-init vars
-                                             (static init-store-val)))
+                                      (static init-store-val)))
            (store-w/sta    (hash-set-kv* store static-params
-                                          (map static static-vals)
-                                          ))
+                                         (map static static-vals)
+                                         ))
            (store-w/sta/dyn (hash-set-kv* store-w/sta dynamic-params
-                                           (map (lambda (var)
-                                                  (dynamic
-                                                   (varref var)))
-                                                dynamic-params)
-                                           )))
+                                          (map (lambda (var)
+                                                 (dynamic
+                                                  (varref var)))
+                                               dynamic-params)
+                                          )))
       store-w/sta/dyn)))
 
 
@@ -129,8 +129,8 @@
            ;; make blockmap, pending list, seen set
            ;;
            (blockmap (hash-kv (map block-label blocks)
-                                    blocks
-                                    ))
+                              blocks
+                              ))
            (pending         (add-pending init-state empty-pending))
            (seen            empty-set)
            ;;
@@ -203,9 +203,9 @@
                    (state label new-store))
                  new-labels)
             (block (state->label 
-                                    (state
-                                     (block-label bl)
-                                     store))
+                    (state
+                     (block-label bl)
+                     store))
                    res-assigns
                    res-jump)))))
 
@@ -235,7 +235,7 @@
                '())]
         [(dynamic obj)
          (cons (hash-set store var
-                             (dynamic (varref var)))
+                         (dynamic (varref var)))
                (list (assign var
                              obj)))]
         [else (error "Invalid pe-value in online-assign: " pe-val)]))))
@@ -247,8 +247,8 @@
     (match jump
       [(goto label) (cons (list label)
                           (goto (state->label 
-                                                 (state label
-                                                        store))))]
+                                 (state label
+                                        store))))]
       [(return exp) (let* ((pe-val (online-exp exp store))
                            (exp1   (lift pe-val)))
                       (cons (list (halt '()))
@@ -257,28 +257,28 @@
        (let ((pe-val (online-exp exp store)))
          (match pe-val
            [(static obj)
-            (if (is-true? obj)
+            (if obj
                 (let ((new-then-label (state->label
-                                                       (state
-                                                        then-label
-                                                        store))))
+                                       (state
+                                        then-label
+                                        store))))
                   (cons (list then-label)
                         (goto new-then-label)))
                 (let ((new-else-label (state->label 
-                                                       (state
-                                                        else-label
-                                                        store))))
+                                       (state
+                                        else-label
+                                        store))))
                   (cons (list else-label)
                         (goto new-else-label))))]
            [(dynamic obj)
             (let ((new-then-label (state->label 
-                                                   (state
-                                                    then-label
-                                                    store)))
+                                   (state
+                                    then-label
+                                    store)))
                   (new-else-label (state->label
-                                                   (state
-                                                    else-label
-                                                    store))))
+                                   (state
+                                    else-label
+                                    store))))
               (cons (list then-label else-label)
                     (if-jump obj
                              new-then-label
