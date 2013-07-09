@@ -123,8 +123,8 @@
            ;;  state-to-label! (it's non-trivial)
            ;;
            (init-state      (state init-label init-store))
-           (tmp             (state-to-label! 'reset))
-           (res-init-label  (state-to-label! 'convert init-state))
+           (tmp             (state->label-reset))
+           (res-init-label  (state->label init-state))
            ;;
            ;; make blockmap, pending list, seen set
            ;;
@@ -202,7 +202,7 @@
       (cons (map (lambda (label)
                    (state label new-store))
                  new-labels)
-            (block (state-to-label! 'convert
+            (block (state->label 
                                     (state
                                      (block-label bl)
                                      store))
@@ -246,7 +246,7 @@
   (lambda (jump store)
     (match jump
       [(goto label) (cons (list label)
-                          (goto (state-to-label! 'convert
+                          (goto (state->label 
                                                  (state label
                                                         store))))]
       [(return exp) (let* ((pe-val (online-exp exp store))
@@ -258,24 +258,24 @@
          (match pe-val
            [(static obj)
             (if (is-true? obj)
-                (let ((new-then-label (state-to-label! 'convert
+                (let ((new-then-label (state->label
                                                        (state
                                                         then-label
                                                         store))))
                   (cons (list then-label)
                         (goto new-then-label)))
-                (let ((new-else-label (state-to-label! 'convert
+                (let ((new-else-label (state->label 
                                                        (state
                                                         else-label
                                                         store))))
                   (cons (list else-label)
                         (goto new-else-label))))]
            [(dynamic obj)
-            (let ((new-then-label (state-to-label! 'convert
+            (let ((new-then-label (state->label 
                                                    (state
                                                     then-label
                                                     store)))
-                  (new-else-label (state-to-label! 'convert
+                  (new-else-label (state->label
                                                    (state
                                                     else-label
                                                     store))))
@@ -367,16 +367,7 @@
                       (newline)
                       (pretty-print (reverse res-blocks))
                       (newline)
-                      (newline)
-                      (if (> debug-level 3)
-                          (begin
-                            (display "...............")
-                            (newline)
-                            (display "State-Label Table: ")
-                            (newline)
-                            (state-to-label! 'print)
-                            (newline))
-                          '()))
+                      (newline))
                     '()))
               '()))
         '())))

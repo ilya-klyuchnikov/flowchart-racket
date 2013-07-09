@@ -189,50 +189,13 @@
         (pretty-print obj out)
         (close-output-port out)))))
 
-;;-----------------------------
-;;
-;; Label management
-;;
-;;   Idea:
-;;
-;;  It is somewhat difficult for us to use states as labels in Scheme.  So
-;;  we will generate unique symbols and use those as labels in the
-;;  residual program.  We need a unique label for each state encountered
-;;  during PE.  Moreover, we need a mapping between states and generated
-;;  labels so we can lookup the appropriate label when the state is
-;;  encountered again.
-;;
-;;  The code below builds a little object with a local variable giving
-;;  a "next label number" n, and a local table implementing the
-;;  mapping between states and labels.  If we encounter state (foo, ..store..)
-;;  then the label foo-n will become associated with the state.
-;;
-;;  The methods to the object are as follows:
-;;
-;;  'reset   - resets the local variable counter and clears the local table.
-;;  'convert - generates a new label for the given state, and makes the
-;;             association in the local table.
-;;  'print   - dumps the state table for debugging purposes
-;;
-;;
-;;-----------------------------
 
-
-(define state-to-label!
-  (let ([state-table (make-hash)])
-    (lambda (command . args)
-      (case command
-        ['convert 
-         (let ((st (car args)))
-           (unless (hash-has-key? state-table st)
-             (hash-set! 
-              state-table 
-              st 
-              (string->symbol (string-append (~a (state-label st)) "-" (~a (hash-count state-table))))))
-           (hash-ref state-table st))]
-        ['print 
-         (pretty-print state-table)]
-        ['reset 
-         (set! state-table (make-hash))]
-        [else 
-         (error "Bad command to state-to-label-numbers: " command)]))))
+;; utilities for managing state->label map
+(define (make-label state i)
+  (string->symbol (string-append (~a (state-label state)) "-" (~a i))))
+(define s->l (make-hash)) ;mapping
+(define (state->label-reset) (set! s->l (make-hash)))
+(define (state->label s)
+  (unless (hash-has-key? s->l s) 
+    (hash-set! s->l s (make-label s (hash-count s->l))))
+  (hash-ref s->l s))

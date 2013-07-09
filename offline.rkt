@@ -375,8 +375,8 @@
                                              static-params
                                              param-store))
            (init-state      (state init-label init-store))
-           (tmp             (state-to-label! 'reset))
-           (res-init-label  (state-to-label! 'convert init-state))
+           (tmp             (state->label-reset))
+           (res-init-label  (state->label init-state))
            (blockmap (hash-kv (map block-label blocks-2)
                                     blocks-2
                                     ))
@@ -506,7 +506,7 @@
       (cons (map (lambda (label)
                    (state label new-store))
                  new-labels)
-            (block (state-to-label! 'convert
+            (block (state->label
                                     (state
                                      (block-label blk)
                                      store))
@@ -545,7 +545,7 @@
   (lambda (jump-2 store)
     (match jump-2
       [(d-goto label) (cons (list label)
-                            (goto (state-to-label! 'convert
+                            (goto (state->label
                                                    (state label
                                                           store))))]
       [(d-return exp) (let* ((exp1 (offline-exp exp store)))
@@ -555,23 +555,23 @@
        (let ((val (offline-exp exp store)))
          (cond
            ((is-true? val)
-            (let ((new-then-label (state-to-label! 'convert
+            (let ((new-then-label (state->label
                                                    (state then-label
                                                           store))))
               (cons (list then-label)
                     (goto new-then-label))))
            ((is-false? val)
-            (let ((new-else-label (state-to-label! 'convert
+            (let ((new-else-label (state->label
                                                    (state else-label
                                                           store))))
               (cons (list else-label)
                     (goto new-else-label))))
            (else (error "Invalid exp val in offline-jump: " val))))]
       [(d-if exp then-label else-label)
-       (let ((new-then-label (state-to-label! 'convert
+       (let ((new-then-label (state->label
                                               (state then-label
                                                      store)))
-             (new-else-label (state-to-label! 'convert
+             (new-else-label (state->label
                                               (state else-label
                                                      store)))
              (exp'           (offline-exp exp store)))
@@ -678,16 +678,7 @@
                       (newline)
                       (pretty-print (reverse res-blocks))
                       (newline)
-                      (newline)
-                      (if (> debug-level 3)
-                          (begin
-                            (display "...............")
-                            (newline)
-                            (display "State-Label Table: ")
-                            (newline)
-                            (state-to-label! 'print)
-                            (newline))
-                          '()))
+                      (newline))
                     '()))
               '()))
         '())))
