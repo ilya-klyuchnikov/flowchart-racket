@@ -4,7 +4,7 @@
 (require "parse.rkt" "eval.rkt" "pe.rkt" "util.rkt" "debug.rkt")
 
 (define s-vs null)
-;;(prog x (static)vars x (static)vals) -> (residual)prog
+
 (define (online-prog prog s-vars s-vals)
   (let* ([params          (program-params prog)]
          [_               (set! s-vs s-vars)]
@@ -39,34 +39,32 @@
                 (loop pending2 seen2 (cons block blocks)))))))
   (loop pending seen blocks))
 
-;;(block x store) -> states, block
+(define (compress? _) #f)
+
 (define (online-block bl store blockmap acc res-label)
   (let*-values 
       ([(new-store res-assigns) (online-assigns (block-assigns bl) store)]
        [(new-labels res-jump) (online-jump (block-jump bl) new-store)])
     (match res-jump
       ; transition compression
-      [(goto lb) 
+      [(goto (? compress? lb)) 
        (online-block (hash-ref blockmap lb) new-store blockmap (append acc res-assigns) res-label)]
       [_ (values
           (map (λ (l) (state l new-store)) new-labels)
           (block res-label (append acc res-assigns) res-jump))])))
 
-; (assigns x store) -> (store x assigns)
 (define (online-assigns assigns store)
   (for/fold ([st store] [res-assigns '()]) 
     ([asg assigns])    
     (let-values ([(store1 delta) (online-assign asg st)])
       (values store1 (append res-assigns delta)))))
 
-;;(assign store) -> (store x assigns)
 (define (online-assign asg store)
   (match-let ([(assign v e) asg])
     (if (member v s-vs)
         (values (hash-set store v (eval-exp e store)) '())
         (values store (list (assign v (online-exp e store)))))))
 
-;;(jump x store) -> (labels x jump)
 (define (online-jump jump store)
   (match jump
     [(goto label)
@@ -82,7 +80,6 @@
         (define r-l2 (state->label (state l2 store)))
         (values (list l1 l2) (if-jump e r-l1 r-l2))])]))
 
-;;(exp store) -> exp
 (define (online-exp exp store)
   (match exp
     [(const datum) (const datum)]
