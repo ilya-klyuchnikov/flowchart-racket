@@ -1,10 +1,7 @@
 #lang racket
 
 (provide online-prog)
-
 (require "parse.rkt" "eval.rkt" "pe.rkt" "util.rkt" "debug.rkt")
-;;--------------------------------------------------------------
-;;  Online PE Procedures
 
 (define s-vs null)
 ;;(prog x (static)vars x (static)vals) -> (residual)prog
@@ -34,7 +31,8 @@
           (if (member st seen)
               (loop pending1 seen blocks)
               (let*-values 
-                  ([(states block) (online-block (hash-ref blockmap lbl) store)]
+                  ([(bl)           (hash-ref blockmap lbl)]
+                   [(states block) (online-block bl store blockmap '() (state->label (state (block-label bl) store)))]
                    [(non-halts)    (filter-not halt-state? states)]
                    [(pending2)     (add-pending* non-halts pending1)]
                    [(seen2)        (add-set st seen)])
@@ -42,13 +40,17 @@
   (loop pending seen blocks))
 
 ;;(block x store) -> states, block
-(define (online-block bl store)
+(define (online-block bl store blockmap acc res-label)
   (let*-values 
       ([(new-store res-assigns) (online-assigns (block-assigns bl) store)]
        [(new-labels res-jump) (online-jump (block-jump bl) new-store)])
-    (values
-     (map (λ (l) (state l new-store)) new-labels)
-     (block (state->label (state (block-label bl) store)) res-assigns res-jump))))
+    (match res-jump
+      ; transition compression
+      [(goto lb) 
+       (online-block (hash-ref blockmap lb) new-store blockmap (append acc res-assigns) res-label)]
+      [_ (values
+          (map (λ (l) (state l new-store)) new-labels)
+          (block res-label (append acc res-assigns) res-jump))])))
 
 ; (assigns x store) -> (store x assigns)
 (define (online-assigns assigns store)
@@ -60,24 +62,25 @@
 ;;(assign store) -> (store x assigns)
 (define (online-assign asg store)
   (match-let ([(assign v e) asg])
-    (if (member v s-vs) ;static
-       ; todo - should we lift here of not??
-       (values (hash-set store v (eval-exp e store)) '())
-       (values store (list (assign v (online-exp e store)))))))
+    (if (member v s-vs)
+        (values (hash-set store v (eval-exp e store)) '())
+        (values store (list (assign v (online-exp e store)))))))
 
 ;;(jump x store) -> (labels x jump)
 (define (online-jump jump store)
   (match jump
     [(goto label)
-     (values (list label) (goto (state->label (state label store))))]
+     (values (list label) (goto label))]
     [(return exp)      
      (values (list (halt '())) (return (online-exp exp store)))]
-    [(if-jump exp l1 l2)
-     (define r-l1 (state->label (state l1 store)))
-     (define r-l2 (state->label (state l2 store)))
+    [(if-jump exp l1 l2)     
      (match (online-exp exp store)
-       [(const e) (if e (values (list l1) (goto r-l1)) (values (list l2) (goto r-l2)))]
-       [e (values (list l1 l2) (if-jump e r-l1 r-l2))])]))
+       [(const e)
+        (if e (values (list l1) (goto l1)) (values (list l2) (goto l2)))]
+       [e
+        (define r-l1 (state->label (state l1 store)))
+        (define r-l2 (state->label (state l2 store)))
+        (values (list l1 l2) (if-jump e r-l1 r-l2))])]))
 
 ;;(exp store) -> exp
 (define (online-exp exp store)
@@ -85,8 +88,23 @@
     [(const datum) (const datum)]
     [(varref var) (if (member var s-vs) (const (hash-ref store var)) (varref var))]
     [(app op es) 
-      (let ([es (map (λ (e) (online-exp e store)) es)])
-        (if (andmap const? es) (const (eval-exp (app op es) store)) (app op es)))]))
+     (let ([es (map (λ (e) (online-exp e store)) es)])
+       (if (andmap const? es) (const (eval-exp (app op es) store)) (app op es)))]))
 
 (define power (file->value "examples/power.fcl"))
-(unparse-program (online-prog (parse-program power) '(n) '(5)))
+(unparse-program (online-prog (parse-program power) '(n) '(2)))
+
+(define t-prog (file->value "examples/turing.rkt"))
+
+(define Q1
+  '((0 if  0 goto 4)
+    (1 if -1 goto 4)
+    (2 right) 
+    (3 goto 0) 
+    (4 write 1)))
+
+(unparse-program 
+ (online-prog 
+  (parse-program t-prog) 
+  '(Q Qtail Operator Instruction Symbol NextLabel) 
+  (list Q1 null null null null null)))
