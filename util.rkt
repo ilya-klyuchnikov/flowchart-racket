@@ -1,17 +1,6 @@
 #lang racket
 
-;; different utils
-(provide
-  hash-set-kv*
-  hash-init
-  hash-filter-by-val
-  hash-kv
-  pretty-print->file
-  add-set 
-  union 
-  intersect
-  add-pending 
-  add-pending*)
+(provide (all-defined-out))
 
 ;------------------------------------------------
 ;hash utils
@@ -19,19 +8,20 @@
 
 ;construct hash from keys and vals
 (define (hash-kv keys vals)
-  (apply hash (interleave keys vals)))
+  (hash-set-kv* (hash) keys vals))
 
 ;extend hash with keys and vals
 (define (hash-set-kv* h keys vals)
-  (apply hash-set* (cons h (interleave keys vals))))
+  (define args (append* (for/list ([k keys] [v vals]) (list k v))))
+  (apply hash-set* (cons h args)))
 
 ;init hash with keys bound to the same val
 (define (hash-init keys val)
-  (apply hash (append-map (λ (x) (list x val)) keys)))
+  (for/hash ([k keys]) (values k val)))
 
 ;filter hash by values
 (define (hash-filter-by-val h pred?)
-  (apply hash (flat-pairs (filter (λ (p) (pred? (cdr p))) (hash->list h)))))
+  (for/hash ([(k v) h] #:when (pred? v)) (values k v))) 
 
 ;------------------------------------------------
 ;lists as with sets
@@ -50,18 +40,18 @@
 ;pending list
 ;------------------------------------------------
 
-; state, pending -> pending
 (define (add-pending-depth-first state pending)
   (append (list state) pending))
-; states, pending -> pending
+
 (define (add-pending-depth-first* states pending)
   (append states pending))
-; state, pending -> pending
+
 (define (add-pending-breath-first state pending)
   (append pending (list state)))
-; states, pending -> pending
+
 (define (add-pending-breath-first* state pending)
   (append pending state))
+
 ; redefine these to switch between depth/breadth first
 (define add-pending add-pending-depth-first)
 (define add-pending* add-pending-depth-first*)
@@ -75,13 +65,3 @@
   (call-with-output-file path 
     (λ (out) (pretty-print obj out)) 
     #:exists 'replace))
-
-;------------------------------------------------
-;internal utilities
-;------------------------------------------------
-
-(define (interleave xs ys)
-  (append* (for/list ([x xs] [y ys]) (list x y))))
-
-(define (pair->list p) (list (car p) (cdr p)))
-(define (flat-pairs ls) (apply append (map pair->list ls)))
