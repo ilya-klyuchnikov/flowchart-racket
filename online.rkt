@@ -1,31 +1,8 @@
 #lang racket
-;;====================================================================
-;;
-;; File: pe-online.scm
-;; Author: John Hatcliff and Shawn Laubach
-;; Last modified: June 28, 1998
-;;
-;;
-;;  Implements an online partial evaluator for FCL.
-;;
-;;====================================================================
 
-(provide (all-defined-out))
+(provide online online-file online-prog)
 
 (require "parse.rkt" "eval.rkt" "pe.rkt" "util.rkt" "debug.rkt")
-
-;;--------------------------------------------------------------
-;;  Top-level calls
-;;
-;; - online-fcl takes a list giving the concrete syntax of an FCL
-;;     program, a list of static parameters, and a list of values
-;;     for static parameters.  It is assumed that these two
-;;     lists have the same length.
-;;
-;; - online-fcl-file takes the program argument from a file
-;;     and writes residual program to a file.
-;;
-;;
 ;;  Example call: specialize power program to n = 2.
 ;;
 ;;  > (define power (file->value "examples/power.fcl"))
@@ -36,7 +13,6 @@
 ;;                 '(2)
 ;;                 "outputs/power-2.fcl")
 ;;
-;;--------------------------------------------------------------
 
 (define (online prog static-params static-vals)
   (pretty-print
@@ -135,62 +111,28 @@
 
 ;;(assign store) -> (store x assigns)
 (define (online-assign asg store)
-  (let* ((var    (assign-var asg))
-         (exp    (assign-exp asg))
-         (pe-val (online-exp exp store)))
-    (match pe-val
+  (match-let ([(assign v e) asg])
+    (match (online-exp exp store)
       [(static obj)
-       (values (hash-set store var pe-val) '())]
+       (values (hash-set store v (static obj)) '())]
       [(dynamic obj)
-       (values (hash-set store var (dynamic (varref var)))
-               (list (assign var obj)))]
-      [_ (error "Invalid pe-value in online-assign: " pe-val)])))
-
+       (values (hash-set store v (dynamic (varref v))) (list (assign v obj)))])))
 
 ;;(jump x store) -> (labels x jump)
-;; todo - return values
 (define (online-jump jump store)
   (match jump
-    [(goto label) (values (list label)
-                          (goto (state->label 
-                                 (state label
-                                        store))))]
-    [(return exp) (let* ((pe-val (online-exp exp store))
-                         (exp1   (lift pe-val)))
-                    (values (list (halt '()))
-                            (return exp1)))]
-    [(if-jump exp then-label else-label)
-     (let ((pe-val (online-exp exp store)))
-       (match pe-val
-         [(static obj)
-          (if obj
-              (let ((new-then-label (state->label
-                                     (state
-                                      then-label
-                                      store))))
-                (values (list then-label)
-                        (goto new-then-label)))
-              (let ((new-else-label (state->label 
-                                     (state
-                                      else-label
-                                      store))))
-                (values (list else-label)
-                        (goto new-else-label))))]
-         [(dynamic obj)
-          (let ((new-then-label (state->label 
-                                 (state
-                                  then-label
-                                  store)))
-                (new-else-label (state->label
-                                 (state
-                                  else-label
-                                  store))))
-            (values (list then-label else-label)
-                    (if-jump obj
-                             new-then-label
-                             new-else-label)))]
-         (else (error "Unrecognized pe-val in online-jump: " pe-val))))]
-    [else (error "Unrecognized jump in online-jump: " jump)]))
+    [(goto label)
+     (values (list label) (goto (state->label (state label store))))]
+    [(return exp)      
+     (values (list (halt '())) (return (lift (online-exp exp store))))]
+    [(if-jump exp l1 l2)
+     (define r-l1 (state->label (state l1 store)))
+     (define r-l2 (state->label (state l2 store)))
+     (match (online-exp exp store)
+       [(static obj)
+        (if obj (values (list l1) (goto r-l1)) (values (list l2) (goto r-l2)))]
+       [(dynamic obj)        
+        (values (list l1 l2) (if-jump obj r-l1 r-l2))])]))
 
 ;;(exp store) -> pe-val
 (define (online-exp exp store)
@@ -211,4 +153,3 @@
   (match pe-val
     [(static obj) (const obj)]
     [(dynamic obj) obj]))
-
