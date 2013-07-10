@@ -76,10 +76,8 @@
      (define r-l1 (state->label (state l1 store)))
      (define r-l2 (state->label (state l2 store)))
      (match (online-exp exp store)
-       [(static obj)
-        (if obj (values (list l1) (goto r-l1)) (values (list l2) (goto r-l2)))]
-       [(dynamic obj)        
-        (values (list l1 l2) (if-jump obj r-l1 r-l2))])]))
+       [(const e) (if e (values (list l1) (goto r-l1)) (values (list l2) (goto r-l2)))]
+       [e (values (list l1 l2) (if-jump e r-l1 r-l2))])]))
 
 ;;(exp store) -> exp
 (define (online-exp exp store)
@@ -87,7 +85,8 @@
     [(const datum) (const datum)]
     [(varref var) (if (member var s-vs) (const (hash-ref store var)) (varref var))]
     [(app op es) 
-      (let ([e1 (app op (map (λ (e) (online-exp e store)) es))])
-        (if (static1? e1) (const (eval-exp e1 store)) e1))]))
-; todo
-(define static1? null)
+      (let ([es (map (λ (e) (online-exp e store)) es)])
+        (if (andmap const? es) (const (eval-exp (app op es) store)) (app op es)))]))
+
+(define power (file->value "examples/power.fcl"))
+(unparse-program (online-prog (parse-program power) '(n) '(5)))
