@@ -45,17 +45,19 @@
 ;;(state blockmap) -> value
 (define (compute-transitions st blockmap)
   (define (transition st)
-    (eval-debug (eval-block (hash-ref blockmap (state-label st)) (state-store st)))
-    (match (eval-block (hash-ref blockmap (state-label st)) (state-store st))
+    (define st1 
+      (eval-block (hash-ref blockmap (state-label st)) (state-store st)))
+    (eval-debug st1) ;;debug - see below
+    (match st1 
       [(state (halt v) _) v]
       [s1 (transition s1)]))      
   (transition st))
 
 ;; (block store) -> state
 (define (eval-block block store)
-  (let* ([store1 (eval-assigns (block-assigns block) store)]
-         [label1 (eval-jump (block-jump block) store1)])
-    (state label1 store1)))
+  (define store1 (eval-assigns (block-assigns block) store))
+  (define label1 (eval-jump (block-jump block) store1))
+  (state label1 store1))
 
 ;;(assigns store) -> store
 (define (eval-assigns assigns store)
@@ -84,17 +86,15 @@
 
 (define debug-level 0)
 
-(define eval-debug
-  (lambda (state)
-    (if (> debug-level 0)
-        (begin
-          (display "-------------------------------")
-          (newline)
-          (display "LABEL: ")
-          (pretty-print (state-label state))
-          (newline)
-          (display "STORE: ")
-          (newline)
-          (pretty-print (state-store state))
-          (newline))
-        '())))
+(define (eval-debug state)
+  (when (> debug-level 0)
+    (begin
+      (display "-------------------------------\n")
+      (newline)
+      (display "LABEL: ")
+      (pretty-print (state-label state))
+      (newline)
+      (display "STORE: ")
+      (newline)
+      (pretty-print (state-store state))
+      (newline))))
