@@ -1,6 +1,7 @@
 #lang racket
 
-(provide eval-fcl eval-fcl-file eval-op init-val (struct-out state) (struct-out halt) halt-state?)
+(provide eval-fcl eval-fcl-file eval-op eval-exp
+         init-val (struct-out state) (struct-out halt) halt-state?)
 
 (require "parse.rkt")
 (require "debug.rkt")
