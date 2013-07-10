@@ -12,11 +12,8 @@
 
 (provide (all-defined-out))
 
-(require "parse.rkt") 
-(require "eval.rkt")
-(require "pe.rkt")    
-(require "util.rkt")  
-(require "lib-pending.rkt")
+(require "parse.rkt" "eval.rkt" "pe.rkt" "util.rkt")
+
 ;;--------------------------------------------------------------
 ;;  Top-level calls
 ;;
@@ -31,15 +28,13 @@
 ;;
 ;;  Example call: specialize power program to n = 2.
 ;;
-;;  > (define power (get-file-object "examples/power.fcl"))
+;;  > (define power (file->value "examples/power.fcl"))
 ;;  > (online power '(n) '(2))
 ;;
 ;;  > (online-file "examples/power.fcl"
 ;;                 '(n)
 ;;                 '(2)
 ;;                 "outputs/power-2.fcl")
-;;
-;;  Note: get-file-object is in lib-fcl-shared.sc0m
 ;;
 ;;--------------------------------------------------------------
 
@@ -130,7 +125,7 @@
            (blockmap (hash-kv (map block-label blocks)
                               blocks
                               ))
-           (pending         (add-pending init-state empty-pending))
+           (pending         (list init-state))
            (seen            '())
            ;;
            ;; Do Online PE transitions until pending list is empty.
@@ -153,8 +148,8 @@
   (lambda (blockmap pending seen res-blocks)
     (letrec ((transition
               (lambda (pending seen res-blocks)
-                (if (not (empty-pending? pending))
-                    (let* ((state/new-pending (remove-pending pending))
+                (if (not (empty? pending))
+                    (let* ((state/new-pending pending)
                            (state             (car state/new-pending))
                            (new-pending       (cdr state/new-pending))
                            ;; debugging (see bottom of file for def)

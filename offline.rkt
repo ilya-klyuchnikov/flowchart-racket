@@ -14,11 +14,8 @@
 ;;====================================================================
 
 (provide offline-prog)
-(require "parse.rkt")
-(require "eval.rkt")
-(require "pe.rkt")    
-(require "util.rkt")  
-(require "lib-pending.rkt")
+
+(require "parse.rkt" "eval.rkt" "pe.rkt" "util.rkt")
 
 ;;----------------------------------------------------------------
 ;; Two-level syntax
@@ -377,7 +374,7 @@
            (blockmap (hash-kv (map block-label blocks-2)
                               blocks-2
                               ))
-           (pending         (add-pending init-state empty-pending))
+           (pending         (list init-state))
            (seen            '())
            ;;
            ;;  run offline pe transitions until done, res blocks returned
@@ -462,8 +459,8 @@
   (lambda (blockmap pending seen res-blocks)
     (letrec ((transition
               (lambda (pending seen res-blocks)
-                (if (not (empty-pending? pending))
-                    (let* ((state/new-pending (remove-pending pending))
+                (if (not (empty? pending))
+                    (let* ((state/new-pending pending)
                            (state             (car state/new-pending))
                            (new-pending       (cdr state/new-pending))
                            (temp              (offline-debug state
