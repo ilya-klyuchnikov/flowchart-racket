@@ -14,12 +14,10 @@
     [(static obj) obj]
     [(dynamic obj) obj]))
 
-;; utilities for managing state->label map
-(define (make-label state i)
-  (string->symbol (string-append (~a (state-label state)) "-" (~a i))))
-(define s->l (make-hash)) ;mapping
+(define-values (s->l i) (values (make-hash) 0))
+(define (gen base) 
+  (set! i (add1 i)) (string-append (~a base) "-" (~a i)))  
 (define (state->label-reset) (set! s->l (make-hash)))
 (define (state->label s)
-  (unless (hash-has-key? s->l s) 
-    (hash-set! s->l s (make-label s (hash-count s->l))))
+  (unless (hash-has-key? s->l s) (hash-set! s->l s (gen (state-label s))))
   (hash-ref s->l s))

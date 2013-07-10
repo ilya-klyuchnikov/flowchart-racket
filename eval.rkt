@@ -3,6 +3,7 @@
 (provide eval-fcl eval-fcl-file eval-op init-val (struct-out state) (struct-out halt) halt-state?)
 
 (require "parse.rkt")
+(require "debug.rkt")
 (require "util.rkt")
 
 ;;  Examples:
@@ -11,7 +12,6 @@
 ;;  > (eval-fcl-file "examples/power.fcl" '(5 2))
 
 (define init-val null)
-(struct state (label store) #:transparent)
 (struct halt (value) #:transparent)
 (define (halt-state? state) (halt? (state-label state)))
 
@@ -47,7 +47,7 @@
   (define (transition st)
     (define st1 
       (eval-block (hash-ref blockmap (state-label st)) (state-store st)))
-    (eval-debug st1) ;;debug - see below
+    (eval-debug st1)
     (match st1 
       [(state (halt v) _) v]
       [s1 (transition s1)]))      
@@ -83,18 +83,3 @@
     [(const datum) datum]
     [(varref var) (hash-ref store var)]
     [(app op exps) (eval-op op (map (λ (exp) (eval-exp exp store)) exps))]))
-
-(define debug-level 0)
-
-(define (eval-debug state)
-  (when (> debug-level 0)
-    (begin
-      (display "-------------------------------\n")
-      (newline)
-      (display "LABEL: ")
-      (pretty-print (state-label state))
-      (newline)
-      (display "STORE: ")
-      (newline)
-      (pretty-print (state-store state))
-      (newline))))

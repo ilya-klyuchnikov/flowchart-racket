@@ -55,6 +55,7 @@
 (struct goto       (label)                      #:transparent) 
 (struct if-jump    (exp then-label else-label)  #:transparent)
 (struct return     (exp)                        #:transparent)
+(struct state      (label store)                #:transparent)
 
 ;;
 ;; New primitives added by user must be added to this list.
