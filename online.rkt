@@ -3,16 +3,6 @@
 (provide online online-file online-prog)
 
 (require "parse.rkt" "eval.rkt" "pe.rkt" "util.rkt" "debug.rkt")
-;;  Example call: specialize power program to n = 2.
-;;
-;;  > (define power (file->value "examples/power.fcl"))
-;;  > (online power '(n) '(2))
-;;
-;;  > (online-file "examples/power.fcl"
-;;                 '(n)
-;;                 '(2)
-;;                 "outputs/power-2.fcl")
-;;
 
 (define (online prog static-params static-vals)
   (pretty-print
@@ -28,13 +18,6 @@
   (pretty-print->file out-file-name result)
   (pretty-print result))
 
-;;--------------------------------------------------------------
-;;  make-initial store
-;;
-;;  First makes a store where all program variables have
-;;  static value init-store-val.  Then initializes all
-;;  static parameter values, then initializes all
-;;  dynamic parameter values to dynamic
 (define (make-store vars s-params s-vals d-params)
   (define s 
     (hash-set-kv* (hash-init vars (static '())) s-params (map static s-vals)))
@@ -42,53 +25,37 @@
 
 ;;--------------------------------------------------------------
 ;;  Online PE Procedures
-;;
-;;  There is one procedure for each syntactic category in FCL.
-;;  The structure closely follows the operational semantics
-;;  definition.
-;;--------------------------------------------------------------
 
 ;;(prog x (static)vars x (static)vals) -> (residual)prog
 (define (online-prog prog s-params s-vals)
-  (let* (;;
-         ;; get the program pieces
-         (params          (program-params prog))
-         (blocks          (program-blocks prog))
-         ;; set up to form initial store
-         (vars            (collect-vars prog))   
-         (d-params        (remove* s-params params))
-         (init-store      (make-store vars s-params s-vals d-params))
-         ;;
-         ;; make initial state
+  (let* ([params          (program-params prog)]
+         [blocks          (program-blocks prog)]
+         [vars            (collect-vars prog)]
+         [d-params        (remove* s-params params)]
+         [init-store      (make-store vars s-params s-vals d-params)]
          (init-state      (state (program-init-label prog) init-store))
-         (_               (state->label-reset))
-         (res-init-label  (state->label init-state))
-         ;; make blockmap, pending list, seen set
-         (blockmap        (hash-kv (map block-label blocks) blocks))
-         (pending         (list init-state))
-         (seen            '())
-         ;; Do Online PE transitions until pending list is empty.
-         ;; We get residual blocks as a result.
-         (res-blocks (transitions blockmap pending seen '())))
+         [_               (state->label-reset)]
+         [res-init-label  (state->label init-state)]
+         [blockmap        (hash-kv (map block-label blocks) blocks)]
+         [pending         (list init-state)]
+         [seen            (list)]
+         [res-blocks (transitions blockmap pending seen '())])
     (program d-params res-init-label (reverse res-blocks))))
 
 ;; the main loop
 (define (transitions blockmap pending seen blocks)
   (define (loop pending seen blocks)
-    (if (empty? pending)
-        blocks
-        (let* ([state      (car pending)]
-               [pending1   (cdr pending)]
-               [lbl        (state-label state)]
-               [store      (state-store state)]
-               [temp       (online-debug state pending1 seen blocks)])
-          (if (member state seen)
+    (if (empty? pending) blocks
+        (match-let* ([(cons st pending1) pending]
+                     [(state lbl store)  st]
+                     [_ (online-debug st pending1 seen blocks)])
+          (if (member st seen)
               (loop pending1 seen blocks)
               (let*-values 
                   ([(states block) (online-block (hash-ref blockmap lbl) store)]
                    [(non-halts)    (filter-not halt-state? states)]
                    [(pending2)     (add-pending* non-halts pending1)]
-                   [(seen2)        (add-set state seen)])
+                   [(seen2)        (add-set st seen)])
                 (loop pending2 seen2 (cons block blocks)))))))
   (loop pending seen blocks))
 
@@ -112,7 +79,7 @@
 ;;(assign store) -> (store x assigns)
 (define (online-assign asg store)
   (match-let ([(assign v e) asg])
-    (match (online-exp exp store)
+    (match (online-exp e store)
       [(static obj)
        (values (hash-set store v (static obj)) '())]
       [(dynamic obj)
