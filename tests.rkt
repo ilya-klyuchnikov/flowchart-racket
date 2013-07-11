@@ -4,6 +4,7 @@
 (require "eval.rkt")
 (require "online.rkt")
 (require "offline.rkt")
+(require "mix.rkt")
 (require rackunit)
 
 ;; testing
@@ -102,3 +103,6 @@
 
 (define s1 (unparse-program (online-prog (parse-program t-prog) '(Q) (list Q1))))
 (check-equal? (eval-fcl s1 (list '(0 0))) '(1 0))
+
+(define s2 (unparse-program (mix-prog (parse-program t-prog) '(Q) (list Q1))))
+(check-equal? (eval-fcl s2 (list '(0 0))) '(1 0))
