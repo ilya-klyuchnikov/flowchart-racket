@@ -3,7 +3,27 @@
 (provide (all-defined-out))
 
 ;------------------------------------------------
-;hash utils
+; State
+;------------------------------------------------
+(struct state (label store) #:transparent)
+(struct halt (value) #:transparent)
+(define (halt-state? state) (halt? (state-label state)))
+(define init-val null)
+
+;------------------------------------------------
+; Evaluation of static expressions
+;------------------------------------------------
+(define (hd l) (if (empty? l) -1 (first l)))
+(define (tl l) (if (empty? l) '() (rest l)))
+(define-namespace-anchor a)
+(define ns (namespace-anchor->namespace a))
+
+(define (eval-op op args)
+  (apply (eval op ns) args))
+
+
+;------------------------------------------------
+; Hash utils
 ;------------------------------------------------
 
 ;construct hash from keys and vals

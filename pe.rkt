@@ -4,6 +4,7 @@
          (struct-out dynamic) 
          pe-val->object state->label state->label-reset)
 
+(require "util.rkt")
 (require "eval.rkt")
 
 (struct static  (obj) #:transparent)

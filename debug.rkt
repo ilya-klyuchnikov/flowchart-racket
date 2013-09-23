@@ -2,6 +2,7 @@
 
 (provide eval-debug online-debug)
 (require "parse.rkt")
+(require "util.rkt")
 
 (define eval-debug-level 0)
 
