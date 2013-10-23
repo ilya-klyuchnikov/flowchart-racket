@@ -1,22 +1,7 @@
 #lang racket
 
-(provide online online-file online-prog)
-
-(require "parse.rkt" "eval.rkt" "pe.rkt" "util.rkt" "debug.rkt")
-
-(define (online prog static-params static-vals)
-  (pretty-print
-   (unparse-program
-    (online-prog
-     (parse-program prog) static-params static-vals))))
-
-(define (online-file in-file-name static-params static-vals out-file-name)
-  (define prog (file->value in-file-name))
-  (define result (unparse-program (online-prog (parse-program prog)
-                                               static-params
-                                               static-vals)))
-  (pretty-print->file out-file-name result)
-  (pretty-print result))
+(provide online-prog)
+(require "parse.rkt" "eval.rkt" "pe.rkt" "util.rkt")
 
 (define (make-store vars s-params s-vals d-params)
   (define s 
@@ -47,8 +32,7 @@
   (define (loop pending seen blocks)
     (if (empty? pending) blocks
         (match-let* ([(cons st pending1) pending]
-                     [(state lbl store)  st]
-                     [_ (online-debug st pending1 seen blocks)])
+                     [(state lbl store)  st])
           (if (member st seen)
               (loop pending1 seen blocks)
               (let*-values 

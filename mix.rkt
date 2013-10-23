@@ -1,7 +1,7 @@
 #lang racket
 
 (provide mix-prog)
-(require "parse.rkt" "eval.rkt" "pe.rkt" "util.rkt" "debug.rkt")
+(require "parse.rkt" "eval.rkt" "pe.rkt" "util.rkt")
 
 (define (mix-prog prog s-vars s-vals)
   (let* ([params          (program-params prog)]
@@ -21,8 +21,7 @@
   (define (loop pending seen blocks)
     (if (empty? pending) blocks
         (match-let* ([(cons st pending1) pending]
-                     [(state lbl store)  st]
-                     [_ (online-debug st pending1 seen blocks)])
+                     [(state lbl store)  st])
           (if (member st seen)
               (loop pending1 seen blocks)
               (let*-values 
@@ -34,6 +33,7 @@
                 (loop pending2 seen2 (cons block blocks)))))))
   (reverse (loop (list st) '() '())))
 
+; TODO when compress? is set to #f tests are not passed
 (define (compress? _) #t)
 
 (define (mix-block bl store blockmap acc res-label s-vs)
@@ -83,7 +83,3 @@
      (let ([es (map (λ (e) (reduce e store s-vs)) es)])
        (if (andmap const? es) (const (eval-exp (app op es) store)) (app op es)))]))
 
-(define power (file->value "examples/power.fcl"))
-(unparse-program (mix-prog (parse-program power) '(n) '(2)))
-
-(define t-prog (file->value "examples/turing.rkt"))

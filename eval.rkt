@@ -3,7 +3,6 @@
 (provide eval-fcl eval-fcl-file eval-op eval-exp)
 
 (require "parse.rkt")
-(require "debug.rkt")
 (require "util.rkt")
 
 ;;  Examples:

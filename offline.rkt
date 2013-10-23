@@ -568,9 +568,9 @@
              (new-else-label (state->label
                               (state else-label
                                      store)))
-             (exp'           (offline-exp exp store)))
+             (exp1           (offline-exp exp store)))
          (cons (list then-label else-label)
-               (if-jump exp'
+               (if-jump exp1
                         new-then-label
                         new-else-label)))]
       [else (error "Incorrect jump in offline-jump: " jump-2)])))
