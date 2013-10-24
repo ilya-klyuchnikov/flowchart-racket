@@ -1,9 +1,9 @@
 ((Q Right)
  (init)
  (
-  {init          ((Qtail := Q)
+  (init          ((Qtail := Q)
                   (Left := '() )) 
-                 (goto loop)}  
+                 (goto loop))  
   (loop          ()
                  (if (equal? Qtail '()) stop cont))
   (cont          ((Instruction := (hd Qtail))
