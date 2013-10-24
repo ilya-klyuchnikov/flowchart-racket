@@ -2,18 +2,13 @@
 
 (provide (struct-out static) 
          (struct-out dynamic) 
-         pe-val->object state->label state->label-reset)
+         state->label state->label-reset)
 
 (require "util.rkt")
 (require "eval.rkt")
 
 (struct static  (obj) #:transparent)
 (struct dynamic (obj) #:transparent)
-
-(define (pe-val->object pe-val)
-  (match pe-val
-    [(static obj) obj]
-    [(dynamic obj) obj]))
 
 (define-values (s->l i) (values (make-hash) 0))
 (define (gen base) 

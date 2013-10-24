@@ -21,24 +21,25 @@
          (init-state      (state (program-init-label prog) init-store))
          [_               (state->label-reset)]
          [blockmap        (hash-kv (map block-label blocks) blocks)]
-         [res-blocks (transitions init-state blockmap)])
+         [res-blocks      (online-state init-state blockmap)])
     (program d-params (block-label (first res-blocks)) res-blocks)))
 
 ;; the main point
 ;; takes an initial state and a program (= blockmap)
 ;; and produces a list of residual blocks
 ;; the first block will be an initial one
-(define (transitions init-state blockmap)
+(define (online-state init-state blockmap)
   (define (loop pending seen res-blocks)
     (if (empty? pending) res-blocks
-        (match-let* ([(cons st pending1) pending]
+        (match-let* ([(cons st pending) pending]
                      [(state lbl store)  st])          
           (let*-values 
-              ([(states block) (online-block (hash-ref blockmap lbl) store)]
+              ([(bl)           (hash-ref blockmap lbl)]
+               [(states block) (online-block bl store)]
                [(non-halts)    (filter-not halt-state? states)]                   
-               [(seen2)        (add-set st seen)]
-               [(pending2)     (remove* seen2 (add-pending* non-halts pending1))])
-            (loop pending2 seen2 (cons block res-blocks))))))
+               [(seen)         (add-set st seen)]
+               [(pending)      (remove* seen (add-pending* non-halts pending))])
+            (loop pending seen (cons block res-blocks))))))
   (reverse (loop (list init-state) '() '())))
 
 ;; IN  : in-block, store
@@ -55,11 +56,10 @@
 
 ;; IN  : in-assigns,  store
 ;; OUT : out-assigns, store
-(define (online-assigns assigns store)
-  (for/fold ([st store] [res-assigns '()]) 
-    ([asg assigns])    
-    (let-values ([(store1 delta) (online-assign asg st)])
-      (values store1 (append res-assigns delta)))))
+(define (online-assigns assigns sd-store)
+  (for/fold ([st sd-store] [res-assigns '()]) ([asg assigns])    
+    (let-values ([(st delta) (online-assign asg st)])
+      (values st (append res-assigns delta)))))
 
 ;; IN  : in-assign,   sd-store
 ;; OUT : out-assigns, sd-store
@@ -77,20 +77,20 @@
 ;; where
 ;; * labels - a list of (original) labels in the residual jump
 ;; * jump - residual jump
-(define (online-jump jump store)
+(define (online-jump jump sd-store)
   (match jump
     [(goto label)
-     (values (list label) (goto (state->label (state label store))))]
+     (values (list label) (goto (state->label (state label sd-store))))]
     [(return exp)      
-     (values (list (halt '())) (return (lift (online-exp exp store))))]
+     (values (list (halt '())) (return (lift (online-exp exp sd-store))))]
     [(if-jump exp l1 l2)
-     (define r-l1 (state->label (state l1 store)))
-     (define r-l2 (state->label (state l2 store)))
-     (match (online-exp exp store)
-       [(static obj)
-        (if obj (values (list l1) (goto r-l1)) (values (list l2) (goto r-l2)))]
-       [(dynamic obj)        
-        (values (list l1 l2) (if-jump obj r-l1 r-l2))])]))
+     (define r-l1 (state->label (state l1 sd-store)))
+     (define r-l2 (state->label (state l2 sd-store)))
+     (match (online-exp exp sd-store)
+       [(static e)
+        (if e (values (list l1) (goto r-l1)) (values (list l2) (goto r-l2)))]
+       [(dynamic e)        
+        (values (list l1 l2) (if-jump e r-l1 r-l2))])]))
 
 ;; IN  :  an expression `exp` and a sd-store
 ;; OUT : a corresponding residual expression
@@ -102,7 +102,7 @@
     [(app op es) (online-op op (map (λ (e) (online-exp e sd-store)) es))]
     [_ (error "Unrecognized exp in online-exp: " exp)]))
 
-;; IN  :  an operations `op` and its arguments `pe-vals`
+;; IN  : an operations `op` and its arguments `pe-vals`
 ;; OUT : a residual expression
 ;; if all args are static, evaluated, otherwise, - residualized
 (define (online-op op pe-vals)
@@ -114,4 +114,9 @@
 (define (lift pe-val)
   (match pe-val
     [(static obj) (const obj)]
+    [(dynamic obj) obj]))
+
+(define (pe-val->object pe-val)
+  (match pe-val
+    [(static obj) obj]
     [(dynamic obj) obj]))
