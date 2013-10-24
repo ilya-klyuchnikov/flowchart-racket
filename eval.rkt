@@ -5,15 +5,6 @@
 (require "parse.rkt")
 (require "util.rkt")
 
-;;  Examples:
-;;  > (define power (file->value "examples/power.fcl"))
-;;  > (eval-fcl power '(5 2))
-;;  > (eval-fcl-file "examples/power.fcl" '(5 2))
-
-;--------------------------------------------------------------------
-; Evaluator Procedures
-;--------------------------------------------------------------------
-
 (define (eval-fcl-file file-name args)
   (eval-fcl (file->value file-name) args))
 

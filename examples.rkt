@@ -1,5 +1,7 @@
 #lang racket
 
+;; I do not remember how this examples appeared
+
 (require "parse.rkt" "eval.rkt" "online.rkt" "mix.rkt")
 
 (define t-prog (file->value "examples/turing.rkt"))
@@ -19,17 +21,3 @@
 
 (eval-fcl t-prog (list Q1 right1))
 (eval-fcl t-prog (list Q1 right2))
-
-(online-file "examples/power.fcl"
-                 '(n)
-                 '(2)
-                 "outputs/power-2.fcl")
-
-(unparse-program 
- (mix-prog 
-  (parse-program t-prog) 
-  '(Q Qtail Operator Instruction Symbol NextLabel) 
-  (list Q1 null null null null null)))
-
-(define power (file->value "examples/power.fcl"))
-(unparse-program (mix-prog (parse-program power) '(n) '(2)))

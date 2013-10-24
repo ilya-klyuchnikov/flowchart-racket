@@ -28,31 +28,30 @@
 ;; takes an initial state and a program (= blockmap)
 ;; and produces a list of residual blocks
 ;; the first block will be an initial one
-(define (online-state init-state blockmap)
+(define (online-state init-state b-map)
   (define (loop pending seen res-blocks)
     (if (empty? pending) res-blocks
         (match-let* ([(cons st pending) pending]
                      [(state lbl store)  st])          
           (let*-values 
-              ([(bl)           (hash-ref blockmap lbl)]
-               [(states block) (online-block bl store)]
+              ([(bl)           (hash-ref b-map lbl)]
+               [(res-label)    (state->label (state (block-label bl) store))]
+               [(states block) (online-block bl store res-label)]
                [(non-halts)    (filter-not halt-state? states)]                   
                [(seen)         (add-set st seen)]
                [(pending)      (remove* seen (add-pending* non-halts pending))])
             (loop pending seen (cons block res-blocks))))))
   (reverse (loop (list init-state) '() '())))
 
-;; IN  : in-block, store
+;; IN  : in-block, sd-store
 ;; OUT : states, res-block
 ;; states (list of new states) (one or two -- depending on a jump)
-(define (online-block bl store)
+(define (online-block bl sd-store res-label)
   (let*-values 
-      ([(new-store res-assigns) (online-assigns (block-assigns bl) store)]
-       [(new-labels res-jump) (online-jump (block-jump bl) new-store)])
-    (values (map (λ (label) (state label new-store)) new-labels)
-            (block (state->label (state (block-label bl) store))
-                   res-assigns
-                   res-jump))))
+      ([(next-store res-assigns) (online-assigns (block-assigns bl) sd-store)]
+       [(next-labels res-jump)   (online-jump (block-jump bl) next-store)])
+    (values (map (λ (l) (state l next-store)) next-labels)
+            (block res-label res-assigns res-jump))))
 
 ;; IN  : in-assigns,  store
 ;; OUT : out-assigns, store
@@ -80,15 +79,18 @@
 (define (online-jump jump sd-store)
   (match jump
     [(goto label)
-     (values (list label) (goto (state->label (state label sd-store))))]
+     (define r-l (state->label (state label sd-store)))
+     (values (list label) (goto r-l))]
     [(return exp)      
      (values (list (halt '())) (return (lift (online-exp exp sd-store))))]
     [(if-jump exp l1 l2)
      (define r-l1 (state->label (state l1 sd-store)))
      (define r-l2 (state->label (state l2 sd-store)))
+     (define g-l1 (state->label (state l1 sd-store)))
+     (define g-l2 (state->label (state l2 sd-store)))
      (match (online-exp exp sd-store)
        [(static e)
-        (if e (values (list l1) (goto r-l1)) (values (list l2) (goto r-l2)))]
+        (if e (values (list l1) (goto g-l1)) (values (list l2) (goto g-l2)))]
        [(dynamic e)        
         (values (list l1 l2) (if-jump e r-l1 r-l2))])]))
 

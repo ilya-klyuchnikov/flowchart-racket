@@ -27,24 +27,18 @@
 (define Q2
   '((0 write 1)))
 
-(offline-prog turing '(Q) (list Q1))
-
 (define turing-s1 (unparse-program (offline-prog turing '(Q) (list Q1))))
 (check-equal? (eval-fcl turing-s1 (list '(0 0))) '(1 0))
 
-(define s2 (unparse-program (offline-prog turing '(Q) (list Q1))))
-(check-equal? (eval-fcl s2 (list '(0 0))) '(1 0))
-
-
-; for understanding/tracing
+(display "\n===OFFLINE===\n")
 (display "\noriginal power of 2 arguments:\n")
-power-s0
+(pretty-display power-s0)
 (display "\nspecialized power for n=1:\n")
-power-s1
+(pretty-display power-s1)
 (display "\nspecialized power for n=2:\n")
-power-s2
+(pretty-display power-s2)
 
 (display "\noriginal turing of 2 arguments:\n")
-turing-s0
+(pretty-display turing-s0)
 (display "\nspecialized turing for program Q=Q2:\n")
-turing-s1
+(pretty-display turing-s1)

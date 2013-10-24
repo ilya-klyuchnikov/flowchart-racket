@@ -3,7 +3,6 @@
 (provide mix-prog)
 (require "parse.rkt" "eval.rkt" "pe.rkt" "util.rkt")
 
-
 ;; this is very similar to online, but it accepts BTA!
 ;; it assumes that s-vars are always s-vars
 ;; (so it is a limited form of BTA, I guess)
@@ -28,34 +27,35 @@
 ;; takes an initial state and a program (= blockmap)
 ;; and produces a list of residual blocks
 ;; the first block will be an initial one
-(define (mix-state init-state blockmap s-vs)
+(define (mix-state init-state b-map s-vs)
   (define (loop pending seen blocks)
     (if (empty? pending) blocks
         (match-let* ([(cons st pending) pending]
                      [(state lbl store)  st])          
           (let*-values 
-              ([(bl)           (hash-ref blockmap lbl)]
-               [(states block) (mix-block bl store blockmap '() (state->label (state (block-label bl) store)) s-vs)]
+              ([(bl)           (hash-ref b-map lbl)]
+               [(res-label)    (state->label (state (block-label bl) store))]
+               [(states block) (mix-block bl store b-map '() res-label s-vs)]
                [(non-halts)    (filter-not halt-state? states)]
                [(seen)         (add-set st seen)]
                [(pending)      (remove* seen (add-pending* non-halts pending))])
             (loop pending seen (cons block blocks))))))
   (reverse (loop (list init-state) '() '())))
 
-; TODO when compress? is set to #f tests are not passed
-(define (compress? _) #t)
+(define (compress? _) #f)
 
-(define (mix-block bl store blockmap acc res-label s-vs)
+;; IN  : in-block, s-store
+;; OUT : states, res-block
+(define (mix-block bl s-store b-map acc res-label s-vs)
   (let*-values 
-      ([(new-store res-assigns) (mix-assigns (block-assigns bl) store s-vs)]
-       [(new-labels res-jump) (online-jump (block-jump bl) new-store s-vs)])
+      ([(next-store res-assigns) (mix-assigns (block-assigns bl) s-store s-vs)]
+       [(next-labels res-jump)  (online-jump (block-jump bl) next-store s-vs)])
     (match res-jump
       ; transition compression
       [(goto (? compress? lb)) 
-       (mix-block (hash-ref blockmap lb) new-store blockmap (append acc res-assigns) res-label s-vs)]
-      [_ (values
-          (map (λ (l) (state l new-store)) new-labels)
-          (block res-label (append acc res-assigns) res-jump))])))
+       (mix-block (hash-ref b-map lb) next-store b-map (append acc res-assigns) res-label s-vs)]
+      [_ (values (map (λ (l) (state l next-store)) next-labels)
+                 (block res-label (append acc res-assigns) res-jump))])))
 
 ;; IN  : in-assigns,  store
 ;; OUT : out-assigns, store
@@ -84,15 +84,18 @@
 (define (online-jump jump s-store s-vs)
   (match jump
     [(goto label)
-     (values (list label) (goto label))]
+     (define r-l (if (compress? label) label (state->label (state label s-store))))
+     (values (list label) (goto r-l))]
     [(return exp)      
      (values (list (halt '())) (return (mix-exp exp s-store s-vs)))]
     [(if-jump exp l1 l2)
      (define r-l1 (state->label (state l1 s-store)))
      (define r-l2 (state->label (state l2 s-store)))
+     (define g-l1 (if (compress? l1) l1 (state->label (state l1 s-store))))
+     (define g-l2 (if (compress? l2) l2 (state->label (state l2 s-store))))
      (match (mix-exp exp s-store s-vs)
        [(const e)
-        (if e (values (list l1) (goto l1)) (values (list l2) (goto l2)))]
+        (if e (values (list l1) (goto g-l1)) (values (list l2) (goto g-l2)))]
        [e
         (values (list l1 l2) (if-jump e r-l1 r-l2))])]))
 
