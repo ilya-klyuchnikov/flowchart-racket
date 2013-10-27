@@ -1,0 +1,57 @@
+;; self-interpreter for flowchart language
+;; in this interpreter we assume that expressions are not nested
+;; (flat fcl)
+;; this requirement is essential to implement easy interpreter
+;; otherwise, we need to 
+((program data)
+ (init)
+ (
+  ; initializing data:
+  ; setting initial vars to values, initing blockmap
+  (init                         ((var_list := (first program))
+                                 (label := (prg-init-label program))
+                                 (blockmap := (prg-blockmap program))
+                                 (store := (hash-kv var_list data)))
+                                (goto start-block))
+  ; prepare calculation of a block
+  (start-block                  ((block := (hash-ref blockmap label))
+                                 (commands := (first block))
+                                 (jump := (second block)))
+                                (goto loop-assigns))
+  ; are there commands or we can switch to jump??
+  (loop-assigns                 ()
+                                (if (empty? commands) do-jump1 do-assign))
+  ; performs a single assign
+  (do-assign                    ((asg := (first commands))
+                                 (commands := (rest commands))
+                                 (lhs := (first asg))
+                                 (rhs := (third asg))
+                                 (val := (eval-flat-exp rhs store))
+                                 (store := (hash-set store lhs val)))
+                                (goto loop-assigns))
+  ; deciding how to handle jump
+  (do-jump1                     ((jmp-type := (first jump)))
+                                (if (equal? jmp-type 'return) do-return do-jump2))
+  (do-jump2                     ()
+                                (if (equal? jmp-type 'goto) do-goto do-if))
+  ; performing return
+  (do-return                    ((exp := (second jump))
+                                 (res := (eval-flat-exp exp store)))
+                                (return res))
+  ; changing vars corresponding to control
+  (do-goto                      ((label := (second jump)))
+                                (goto start-block))
+  ; preparing stuff for decision making
+  (do-if                        ((test := (second jump))
+                                 (tres := (eval-flat-exp test store))
+                                 (l1   := (third jump))
+                                 (l2   := (fourth jump)))
+                                (if tres do-if1 do-if2))  
+  ; taking left branch
+  (do-if1                       ((label := l1))
+                                (goto start-block))
+  ; taking right branch
+  (do-if2                       ((label := l2))
+                                (goto start-block))
+  )
+ )

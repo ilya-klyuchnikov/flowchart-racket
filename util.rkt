@@ -11,18 +11,6 @@
 (define init-val null)
 
 ;------------------------------------------------
-; Evaluation of static expressions
-;------------------------------------------------
-(define (hd l) (if (empty? l) -1 (first l)))
-(define (tl l) (if (empty? l) '() (rest l)))
-(define-namespace-anchor a)
-(define ns (namespace-anchor->namespace a))
-
-(define (eval-op op args)
-  (apply (eval op ns) args))
-
-
-;------------------------------------------------
 ; Hash utils
 ;------------------------------------------------
 
@@ -76,6 +64,51 @@
 (define add-pending add-pending-depth-first)
 (define add-pending* add-pending-depth-first*)
 
+
+;------------------------------------------------
+; Evaluation of static expressions
+; functions above become available in FCL
+;------------------------------------------------
+(define (hd l) (if (empty? l) -1 (first l)))
+(define (tl l) (if (empty? l) '() (rest l)))
+
+;---------------------------------------
+; utility functions for self-interpreter
+;----------------------------------------
+(define (mk-blockmap blocks)
+  (hash-kv (map first blocks) (map rest blocks)))
+
+(define (prg-init-label program)
+  (first (second program)))
+
+(define (prg-blocks prg)
+  (first (rest (rest prg))))
+
+(define (prg-blockmap prg)
+  (mk-blockmap (prg-blocks prg)))
+
+(define-namespace-anchor a1)
+(define ns1 (namespace-anchor->namespace a1))
+
+(define (eval-flat-arg arg store)
+  (match arg
+    [(list 'quote e) e]
+    [v (if (number? v) v (hash-ref store v))]))
+
+(define (f1 x y) 1)
+
+(define (eval-flat-exp exp store)
+  (match exp
+    [(list 'quote e) e]
+    [(cons op args) (apply (eval op ns1) (map (λ (v) (eval-flat-arg v store)) args))]
+    [(and v (? symbol? v)) (hash-ref store v)]
+    [(and n (? number? n)) n]))
+
+(define-namespace-anchor a)
+(define ns (namespace-anchor->namespace a))
+
+(define (eval-op op args)
+  (apply (eval op ns) args))
 
 ;------------------------------------------------
 ;pretty-printing to file
