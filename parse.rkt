@@ -49,13 +49,6 @@
 (struct if-jump    (exp then-label else-label)  #:transparent)
 (struct return     (exp)                        #:transparent)
 
-;; New primitives added by user must be added to this list.
-(define primitives
-  '(+ - * < > car cdr cons null list equal? null? pair? list? test hd tl))
-
-(define (primitive? prim)
-  (member prim primitives))
-
 #|
 ============================================================================
   parse-program - converts an s-exp into FCL abstract syntax
@@ -84,7 +77,7 @@
 (define (parse-exp exp)
   (match exp
     [(list 'quote e) (const e)]
-    [(cons (and op (? primitive?)) args) (app op (map parse-exp args))]
+    [(cons op args) (app op (map parse-exp args))]
     [(and n (? number?)) (const n)]
     [(and s (? symbol?)) (varref s)]
     [_ (error "Parse: invalid exp: " exp)]))
@@ -170,7 +163,7 @@
 
 (define (collect-vars-exp exp)
   (match exp
-    [(app op exps) (apply set-union (map collect-vars-exp exps))]
+    [(app op exps) (apply set-union (cons (set) (map collect-vars-exp exps)))]
     [(varref var) (set var)]
     [(const datum) (set)]
     [_ (error "Collect-vars: invalid exp AST: " exp)]))

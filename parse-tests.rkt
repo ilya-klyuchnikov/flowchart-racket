@@ -3,9 +3,6 @@
 (require "parse.rkt")
 (require rackunit)
 
-(check-not-false 
- (primitive? '*))
-
 (check-false 
  (primitive? 'print))
 
@@ -20,10 +17,6 @@
 (check-equal? 
  (parse-exp '(* 1 2)) 
  (app '* (list (const 1) (const 2))))
-
-(check-exn
- exn:fail?
- (lambda () (parse-exp '(1))))
 
 (check-equal?
  (parse-assign '(result := (* result m)))
