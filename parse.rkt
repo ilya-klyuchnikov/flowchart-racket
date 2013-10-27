@@ -86,7 +86,6 @@
     [(list 'quote e) (const e)]
     [(cons (and op (? primitive?)) args) (app op (map parse-exp args))]
     [(and n (? number?)) (const n)]
-    [(and op (? primitive?)) (app op '())] ;; TODO: do we need this?
     [(and s (? symbol?)) (varref s)]
     [_ (error "Parse: invalid exp: " exp)]))
 

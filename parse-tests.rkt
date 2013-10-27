@@ -21,10 +21,6 @@
  (parse-exp '(* 1 2)) 
  (app '* (list (const 1) (const 2))))
 
-(check-equal? 
- (parse-exp '*)
- (app '* '()))
-
 (check-exn
  exn:fail?
  (lambda () (parse-exp '(1))))
