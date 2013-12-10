@@ -1,16 +1,13 @@
-language: c
-
-env:
- - RACKET_VERSION=5.3.6
+language: racket
 
 before_install:
- - curl -L https://github.com/greghendershott/travis-racket/releases/download/v0.3/install-racket.sh | sh
+ - apt-get install racket
 
 install:
 
 before_script:
 
 script:
- - /usr/racket/bin/raco test tests.rkt
+ - raco test tests.rkt
 
 after_script:
