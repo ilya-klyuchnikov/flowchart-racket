@@ -1,7 +1,7 @@
 language: racket
 
 before_install:
- - apt-get install racket
+ - sudo apt-get install racket
 
 install:
 
