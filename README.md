@@ -1,4 +1,4 @@
-## Flowchart in Racket [![Build Status](https://travis-ci.org/ilya-klyuchnikov/flowchart-racket.png)](https://travis-ci.org/flowchart-racket)
+## Flowchart in Racket [![Build Status](https://travis-ci.org/ilya-klyuchnikov/flowchart-racket.png)](https://travis-ci.org/ilya-klyuchnikov/flowchart-racket)
 
 (Original: http://people.cis.ksu.edu/~hatcliff/FPEPS/)
 
