@@ -1,4 +1,8 @@
-#lang racket
+#lang racket/base
+
+(require racket/list)
+(require racket/match)
+(require racket/pretty)
 
 (provide (all-defined-out))
 
@@ -29,7 +33,7 @@
 
 ;filter hash by values
 (define (hash-filter-by-val h pred?)
-  (for/hash ([(k v) h] #:when (pred? v)) (values k v))) 
+  (for/hash ([(k v) h] #:when (pred? v)) (values k v)))
 
 ;------------------------------------------------
 ;lists as with sets
@@ -115,6 +119,6 @@
 ;------------------------------------------------
 
 (define (pretty-print->file path obj)
-  (call-with-output-file path 
-    (λ (out) (pretty-print obj out)) 
+  (call-with-output-file path
+    (λ (out) (pretty-print obj out))
     #:exists 'replace))

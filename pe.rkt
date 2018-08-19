@@ -1,9 +1,10 @@
-#lang racket
+#lang racket/base
 
-(provide (struct-out static) 
-         (struct-out dynamic) 
+(provide (struct-out static)
+         (struct-out dynamic)
          state->label state->label-reset)
 
+(require racket/format)
 (require "util.rkt")
 (require "eval.rkt")
 
@@ -11,7 +12,7 @@
 (struct dynamic (obj) #:transparent)
 
 (define-values (s->l i) (values (make-hash) 0))
-(define (gen base) 
+(define (gen base)
   (set! i (add1 i)) (string->symbol (string-append (~a base) "-" (~a i))))
 (define (state->label-reset) (set!-values (s->l i) (values (make-hash) 0)))
 (define (state->label s)

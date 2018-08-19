@@ -1,7 +1,11 @@
-#lang racket
+#lang racket/base
+
+(require racket/list)
+(require racket/match)
+
+(require "parse.rkt" "eval.rkt" "pe.rkt" "util.rkt")
 
 (provide mix-prog)
-(require "parse.rkt" "eval.rkt" "pe.rkt" "util.rkt")
 
 (define (make-store vars s-params s-vals d-params)
   (hash-set-kv* (hash) s-params s-vals))
@@ -32,8 +36,8 @@
   (define (loop pending seen res-blocks)
     (if (empty? pending) res-blocks
         (match-let* ([(cons st pending) pending]
-                     [(state lbl store)  st])          
-          (let*-values 
+                     [(state lbl store)  st])
+          (let*-values
               ([(bl)           (hash-ref b-map lbl)]
                [(res-label)    (state->label (state (block-label bl) store))]
                [(states block) (pe-block bl store b-map '() res-label)]
@@ -48,7 +52,7 @@
 ;; IN  : in-block, store
 ;; OUT : states, res-block
 (define (pe-block bl store b-map acc res-label)
-  (let*-values 
+  (let*-values
       ([(next-store res-assigns) (pe-assigns (block-assigns bl) store)]
        [(next-labels res-jump)   (pe-jump (block-jump bl) next-store)])
     (match res-jump
@@ -87,7 +91,7 @@
     [(goto label)
      (define r-l (if (compress? label) label (state->label (state label store))))
      (values (list label) (goto r-l))]
-    [(return exp)      
+    [(return exp)
      (values (list (halt '())) (return (pe-exp exp store)))]
     [(if-jump exp l1 l2)
      (define r-l1 (state->label (state l1 store)))

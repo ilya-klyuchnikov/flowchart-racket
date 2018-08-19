@@ -1,4 +1,4 @@
-#lang racket
+#lang racket/base
 
 (require "parse-tests.rkt")
 (require "eval-tests.rkt")

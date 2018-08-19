@@ -1,6 +1,9 @@
-#lang racket
+#lang racket/base
 
 (provide eval-fcl eval-fcl-file eval-op eval-exp)
+
+(require racket/file)
+(require racket/match)
 
 (require "parse.rkt")
 (require "util.rkt")
@@ -25,7 +28,7 @@
 ; makes transitions till return
 (define (loop label store blockmap)
   (define (transition label store)
-    (match (eval-block  (hash-ref blockmap label) store) 
+    (match (eval-block  (hash-ref blockmap label) store)
       [(state (halt v) store) v]
       [(state label store) (transition label store)]))
   (transition label store))
@@ -42,7 +45,7 @@
 
 ; (assign, store) -> store
 (define (eval-assign asgn store)
-  (match asgn 
+  (match asgn
     [(assign v exp) (hash-set store v (eval-exp exp store))]))
 
 ; (jump, store) -> label | (halt value)

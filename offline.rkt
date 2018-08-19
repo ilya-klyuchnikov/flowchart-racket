@@ -1,4 +1,4 @@
-#lang racket
+#lang racket/base
 ;;====================================================================
 ;;
 ;; File: pe-offline.scm
@@ -13,9 +13,13 @@
 ;;
 ;;====================================================================
 
-(provide offline-prog)
-
+(require racket/file)
+(require racket/list)
+(require racket/match)
+(require racket/pretty)
 (require "parse.rkt" "eval.rkt" "pe.rkt" "util.rkt")
+
+(provide offline-prog)
 
 ;;----------------------------------------------------------------
 ;; Two-level syntax
@@ -37,7 +41,7 @@
 
 
 ;;--------------------------------------------------------------
-;;  Top-level calls  
+;;  Top-level calls
 ;;
 ;;  Currently, these work just like the online PE.  Specifically,
 ;;  one does not pass a binding-time signature as an argument
@@ -83,7 +87,7 @@
 ;;  contains assignments that assignment each formally static parameter
 ;;  with the static value given when the PE was run.  This is
 ;;  implemented by make-lift-block.
-;; 
+;;
 ;;--------------------------------------------------------------
 
 (define offline
@@ -434,7 +438,7 @@
 
 (define get-dynamic-vars
   (lambda (vars div)
-    (foldr 
+    (foldr
      (lambda (var dyn-vars)
        (if (dynamic? (hash-ref div var))
            (cons var dyn-vars)
@@ -443,7 +447,7 @@
 
 (define make-init-store
   (lambda (static-vars static-params param-store)
-    (hash-kv static-vars 
+    (hash-kv static-vars
              (map (lambda (var)
                     (if (memq var static-params)
                         (hash-ref
@@ -486,7 +490,7 @@
                     res-blocks))))
       (transition pending seen res-blocks))))
 
-;; identical to online 
+;; identical to online
 ;;(block x store x blocks x assign code) -> intermediate code
 (define offline-block
   (lambda (blk store)

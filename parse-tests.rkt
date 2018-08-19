@@ -1,28 +1,28 @@
-#lang racket
+#lang racket/base
 
 (require "parse.rkt")
 (require rackunit)
 
-(check-false 
+(check-false
  (primitive? 'print))
 
-(check-equal? 
- (parse-exp '1) 
+(check-equal?
+ (parse-exp '1)
  (const 1))
 
-(check-equal? 
- (parse-exp 'a) 
+(check-equal?
+ (parse-exp 'a)
  (varref 'a))
 
-(check-equal? 
- (parse-exp '(* 1 2)) 
+(check-equal?
+ (parse-exp '(* 1 2))
  (app '* (list (const 1) (const 2))))
 
 (check-equal?
  (parse-assign '(result := (* result m)))
  (assign 'result (app '* (list (varref 'result) (varref 'm)))))
 
-(check-equal? 
+(check-equal?
  (parse-jump '(goto test))
  (goto 'test))
 
@@ -43,17 +43,17 @@
     (init)
     {
      (init ((result := 1))
-           (goto test))     
+           (goto test))
      (end ()
           (return result))
      }))
 
 (define ast-prog
-  (program 
-   '(m n) 
-   'init 
-   (list 
-    (block 'init (list (assign 'result (const 1))) (goto 'test)) 
+  (program
+   '(m n)
+   'init
+   (list
+    (block 'init (list (assign 'result (const 1))) (goto 'test))
     (block 'end '() (return (varref 'result))))))
 
 (check-equal? (parse-program s-prog) ast-prog)

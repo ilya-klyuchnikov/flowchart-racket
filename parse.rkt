@@ -1,4 +1,4 @@
-#lang racket
+#lang racket/base
 
 ;;====================================================================
 ;;
@@ -33,6 +33,8 @@
 ;;<datum>      ::= any scheme S-expression
 ;;
 
+(require racket/match)
+(require racket/set)
 (provide (all-defined-out))
 
 ;;====================
@@ -44,8 +46,8 @@
 (struct assign     (var exp)                    #:transparent)
 (struct const      (datum)                      #:transparent)
 (struct varref     (var)                        #:transparent)
-(struct app        (op exps)                    #:transparent) 
-(struct goto       (label)                      #:transparent) 
+(struct app        (op exps)                    #:transparent)
+(struct goto       (label)                      #:transparent)
 (struct if-jump    (exp then-label else-label)  #:transparent)
 (struct return     (exp)                        #:transparent)
 
@@ -57,21 +59,21 @@
 
 ;; <Program>    ::= (<var>* (<label>) <basicblock>+)
 (define (parse-program s-exp)
-  (match s-exp 
-    [(list args (list label) blocks) 
+  (match s-exp
+    [(list args (list label) blocks)
      (program args label (map parse-block blocks))]))
 
 ;; <block> ::= (<label> <assignment>* <jump>)
 (define (parse-block s)
-  (match s 
+  (match s
     [(list label assigns jump)
-     (block label 
-            (map parse-assign assigns) 
+     (block label
+            (map parse-assign assigns)
             (parse-jump jump))]))
 
 ;; <Assignment> ::= (<var> := <exp>)
 (define (parse-assign s)
-  (match s 
+  (match s
     [(list id ':= exp) (assign id (parse-exp exp))]))
 
 (define (parse-exp exp)
@@ -139,7 +141,7 @@
 
 (define (collect-vars-prog prog)
   (match prog
-    [(program args _ blocks) 
+    [(program args _ blocks)
      (apply set-union (cons (set args) (map collect-vars-block blocks)))]
     [_ (error "Collect-vars: invalid program AST:" prog)]))
 
