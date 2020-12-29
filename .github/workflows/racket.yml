@@ -1,0 +1,16 @@
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: "actions/checkout@v2"
+      - name: Install racket
+        run: |
+          sudo add-apt-repository ppa:plt/racket
+          sudo apt-get install racket
+      - name: racket version
+        run: racket -v
+      - name: raco test
+        run: raco test tests.rkt
+on:
+  push: {}
