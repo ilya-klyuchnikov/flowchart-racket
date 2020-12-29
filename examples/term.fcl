@@ -1,4 +1,4 @@
-;; term program from notes in -*- SCM -*- 
+;; term program from notes in -*- SCM -*-
 ;;  returns m x n x term
 ;;
 
@@ -12,12 +12,12 @@
           (goto test-m))
 
  (test-m  ()
-          (if (< 0 m) 
+          (if (< 0 m)
               test-n
               done-m))
 
  (test-n  ()
-          (if (< 0 n) 
+          (if (< 0 n)
               loop
               done-n))
 
@@ -37,5 +37,3 @@
          )
          (return result))
   ))
-
-

@@ -1,4 +1,4 @@
-;; test program in -*- SCM -*- 
+;; test program in -*- SCM -*-
 ;;
 ;;  ... used to test iteration in computing uniform division
 ;;
@@ -26,4 +26,3 @@
        )
        (return b))
  ))
-

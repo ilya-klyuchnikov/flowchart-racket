@@ -1,4 +1,4 @@
-;; test program in -*- SCM -*- 
+;; test program in -*- SCM -*-
 
 ((m n)
  (init)
@@ -9,4 +9,3 @@
   (end ()
        (return result))
   ))
-

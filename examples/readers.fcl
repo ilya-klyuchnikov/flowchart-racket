@@ -16,7 +16,7 @@
             (reqs := (cdr reqs)))
            (goto attempt-start-read))
 
- (attempt-start-read 
+ (attempt-start-read
            ()
        (if (and (= req 1) (= WriterPresent 0))
            start-read
@@ -40,7 +40,7 @@
 
  (attempt-start-write
            ()
-           (if (and (= req 3) 
+           (if (and (= req 3)
                     (and (= ActiveReaders 0)
                          (= WriterPresent 0)))
                start-write
@@ -51,7 +51,7 @@
 
  (attempt-stop-write
            ()
-           (if (and (= req 4) 
+           (if (and (= req 4)
                     (= WriterPresent 1))
                stop-write
                check-reqs))
@@ -68,5 +68,3 @@
   (end ()
        (return req))
   ))
-
-

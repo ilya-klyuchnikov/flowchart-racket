@@ -2,7 +2,7 @@
 ;; in this interpreter we assume that expressions are not nested
 ;; (flat fcl)
 ;; this requirement is essential to implement easy interpreter
-;; otherwise, we need to 
+;; otherwise, we need to
 ((program data)
  (init)
  (
@@ -46,7 +46,7 @@
                                  (tres := (eval-flat-exp test store))
                                  (l1   := (third jump))
                                  (l2   := (fourth jump)))
-                                (if tres do-if1 do-if2))  
+                                (if tres do-if1 do-if2))
   ; taking left branch
   (do-if1                       ((label := l1))
                                 (goto start-block))

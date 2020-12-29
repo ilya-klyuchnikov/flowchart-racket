@@ -11,11 +11,11 @@ Below are some outdated notes.
 ## Files
 
 * `parse.rkt` – implements parsing (from s-expression), unparsing (to s-expression), and a procedure to collect all variables appearing in an FCL program.
-* `util.rkt` – evaluation of quoted expressions, operations, utilities for hashes, lists as sets, pending lists, 
+* `util.rkt` – evaluation of quoted expressions, operations, utilities for hashes, lists as sets, pending lists,
 * `eval.rkt`  – the main loop of interpreter interpreter (looping over blocks till return)
 * `online.rkt` – the online PE (refactored into racket)
 * `offline.rkt` – the offline PE.
-* `mix.rkt` - 
+* `mix.rkt` -
 
 ## Notes
 
@@ -28,7 +28,7 @@ There are several differences between partial evaluation and supercompilation:
 
 Each block in residual program correspond to a pair
 
-`(label, sd-state)` 
+`(label, sd-state)`
 
 where sd-state is a map of var to values. value is either (S const) or D.
 
@@ -36,7 +36,7 @@ Why is the difference in online/mix-jump with labels??
 
 ### Termination
 
-In general case both `online` and `mix` do not terminate. 
+In general case both `online` and `mix` do not terminate.
 
 When do they terminate? They terminate if input program (on supplied data) terminate!
 
@@ -48,6 +48,3 @@ BTW, this is an illustration of difference between PE and SC. - If input program
 2. Examples for termination of PE in degenerative form and non-termination of SC without a whistle. Hint: in the program it should be a decomposition of a dynamic data.
 
 # Self-interpreter for Flowchart.
-
-
-

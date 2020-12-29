@@ -1,4 +1,4 @@
-;; test program in -*- SCM -*- 
+;; test program in -*- SCM -*-
 ;;
 ;;  ... used to test situation where static parameters become dynamic
 ;;      in offline pe.  Call with x and z static, and an initial block
@@ -20,4 +20,3 @@
        )
        (return b))
  ))
-
