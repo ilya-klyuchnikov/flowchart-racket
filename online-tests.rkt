@@ -17,7 +17,7 @@
 (check-equal? (eval-fcl power-s1 '(5)) 5)
 (check-equal? (eval-fcl (unparse-program (online-prog power '(n) '(2))) '(5)) 25)
 
-(define turing-s0 (file->value "examples/turing.rkt"))
+(define turing-s0 (file->value "examples/turing.fcl"))
 (define turing (parse-program turing-s0))
 
 (define Q1

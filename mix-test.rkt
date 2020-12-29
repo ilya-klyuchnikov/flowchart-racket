@@ -14,7 +14,7 @@
 (define power-s1 (unparse-program (mix-prog power '(n) '(1))))
 (define power-s2 (unparse-program (mix-prog power '(n) '(2))))
 
-(define turing-s0 (file->value "examples/turing.rkt"))
+(define turing-s0 (file->value "examples/turing.fcl"))
 (define turing (parse-program turing-s0))
 
 (define Q1

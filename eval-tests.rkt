@@ -21,7 +21,7 @@
 (define Right '(0 0))
 
 (check-equal?
- (eval-fcl-file "examples/turing.rkt" (list Q Right))
+ (eval-fcl-file "examples/turing.fcl" (list Q Right))
  '(1 0))
 
 ; this doesn't work yet since turing has non-flat expressions
